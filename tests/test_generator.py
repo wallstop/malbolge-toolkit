@@ -75,6 +75,7 @@ class GeneratorTests(unittest.TestCase):
             result = generator.generate_for_string("Hi")
         finally:
             patched_generator._state_signature = original_signature
+        self.assertEqual(result.machine_output, "Hi")
         self.assertGreater(result.stats["repeated_state_pruned"], 0)
         self.assertGreater(result.stats["repeated_state_ratio"], 0.0)
 

@@ -78,6 +78,16 @@ class ProgramGenerator:
         tail = tuple(machine.tape[-tail_width:]) if tail_width else ()
         return len(machine.tape), machine.a % 256, machine.c, machine.d, tail
 
+    @staticmethod
+    def _fallback_signature(
+        machine: MalbolgeMachine,
+    ) -> tuple[int, int, int, int, tuple[int, ...]]:
+        tail_width = (
+            SIGNATURE_TAPE_WIDTH if SIGNATURE_TAPE_WIDTH > 0 else len(machine.tape)
+        )
+        tail = tuple(machine.tape[-tail_width:]) if tail_width else ()
+        return len(machine.tape), machine.a, machine.c, machine.d, tail
+
     def generate_for_string(
         self,
         target: str,
@@ -93,7 +103,9 @@ class ProgramGenerator:
         stats = _GenerationStats()
         state_cache: dict[str, _PrefixState] = {}
         dead_programs: set[str] = set()
-        seen_signatures: set[StateSignature] = set()
+        seen_states: dict[tuple[int, int, int, int, tuple[int, ...]], int] = {}
+        canonical_signatures: dict[StateSignature, int] = {}
+        signature_collisions = 0
         trace_events: list[dict[str, object]] | None = [] if cfg.capture_trace else None
         started_ns = perf_counter_ns()
 
@@ -114,7 +126,11 @@ class ProgramGenerator:
             machine=prefix_result.machine,
         )
         state_cache[prefix_state.opcodes] = prefix_state
-        seen_signatures.add(self._state_signature(prefix_state.machine))
+        fallback_prefix = self._fallback_signature(prefix_state.machine)
+        seen_states[fallback_prefix] = len(prefix_state.output)
+        canonical_signatures[self._state_signature(prefix_state.machine)] = len(
+            prefix_state.output
+        )
 
         def _record_trace(
             candidate: str,
@@ -188,31 +204,66 @@ class ProgramGenerator:
                             "Generator requires machine snapshots for heuristics."
                         )
                     signature = self._state_signature(combined_state.machine)
+                    fallback_key = self._fallback_signature(combined_state.machine)
+                    output_value = combined_state.output
+                    output_length = len(output_value)
+                    known_output_length = seen_states.get(fallback_key)
+                    is_new_state = (
+                        known_output_length is None
+                        or output_length > known_output_length
+                    )
+                    previous_signature_output = canonical_signatures.get(signature)
+                    is_new_by_signature = (
+                        previous_signature_output is None
+                        or output_length > previous_signature_output
+                    )
+                    valid_prefix = target.startswith(output_value) and (
+                        output_length <= len(target)
+                    )
+
                     pruned = False
                     reason = "candidate_retained"
-                    if signature in seen_signatures:
+
+                    if valid_prefix and output_value == target_prefix:
+                        seen_states[fallback_key] = max(
+                            known_output_length or 0, output_length
+                        )
+                        canonical_signatures[signature] = max(
+                            previous_signature_output or 0, output_length
+                        )
+                        prefix_state = combined_state
+                        found = True
+                        reason = "accepted"
+                    elif not valid_prefix:
+                        stats.pruned += 1
+                        dead_programs.add(program_key)
+                        pruned = True
+                        reason = "prefix_mismatch"
+                    elif not is_new_state:
                         stats.pruned += 1
                         stats.repeated_state_pruned += 1
                         dead_programs.add(program_key)
                         state_cache.pop(program_key, None)
                         pruned = True
                         reason = "repeated_state"
-                    elif not target.startswith(combined_state.output) or len(
-                        combined_state.output
-                    ) > len(target):
-                        stats.pruned += 1
-                        dead_programs.add(program_key)
-                        pruned = True
-                        reason = "prefix_mismatch"
                     else:
-                        seen_signatures.add(signature)
-                        if combined_state.output == target_prefix:
-                            prefix_state = combined_state
-                            found = True
-                            reason = "accepted"
+                        if not is_new_by_signature:
+                            signature_collisions += 1
+                            reason = "signature_collision"
+                        if (
+                            known_output_length is None
+                            or output_length > known_output_length
+                        ):
+                            seen_states[fallback_key] = output_length
+                        if (
+                            previous_signature_output is None
+                            or output_length > previous_signature_output
+                        ):
+                            canonical_signatures[signature] = output_length
+
                     _record_trace(
                         suffix,
-                        combined_state.output,
+                        output_value,
                         pruned=pruned,
                         reason=reason,
                         cache_hit=from_cache,
@@ -236,6 +287,12 @@ class ProgramGenerator:
                             continue
                         next_frontier.append(candidate)
                 combinations = next_frontier
+
+                if not combinations:
+                    raise MalbolgeRuntimeError(
+                        "Exhausted opcode search before reaching target prefix "
+                        f"'{target_prefix}'."
+                    )
 
                 if depth >= cfg.max_search_depth and combinations:
                     viable = [
@@ -264,15 +321,42 @@ class ProgramGenerator:
                     random_pruned = False
                     random_reason = "random_extension"
                     random_signature = self._state_signature(random_state.machine)
-                    if random_signature in seen_signatures:
+                    random_fallback = self._fallback_signature(random_state.machine)
+                    random_output_length = len(random_state.output)
+                    random_known_length = seen_states.get(random_fallback)
+                    random_is_new = (
+                        random_known_length is None
+                        or random_output_length > random_known_length
+                    )
+                    random_previous_signature = canonical_signatures.get(
+                        random_signature
+                    )
+                    random_is_new_by_signature = (
+                        random_previous_signature is None
+                        or random_output_length > random_previous_signature
+                    )
+                    if not random_is_new:
                         stats.pruned += 1
                         stats.repeated_state_pruned += 1
-                        dead_programs.add(random_key)
                         state_cache.pop(random_key, None)
                         random_pruned = True
                         random_reason = "repeated_state"
                     else:
-                        seen_signatures.add(random_signature)
+                        if not random_is_new_by_signature:
+                            signature_collisions += 1
+                            random_reason = "collision_extension"
+                        if (
+                            random_known_length is None
+                            or random_output_length > random_known_length
+                        ):
+                            seen_states[random_fallback] = random_output_length
+                        if (
+                            random_previous_signature is None
+                            or random_output_length > random_previous_signature
+                        ):
+                            canonical_signatures[random_signature] = (
+                                random_output_length
+                            )
                     _record_trace(
                         random_choice,
                         random_state.output,
@@ -302,7 +386,14 @@ class ProgramGenerator:
             raise MalbolgeRuntimeError(
                 "Generator requires machine snapshots for heuristics."
             )
-        seen_signatures.add(self._state_signature(final_state.machine))
+        final_key = self._fallback_signature(final_state.machine)
+        final_signature = self._state_signature(final_state.machine)
+        final_output_length = len(final_state.output)
+        seen_states[final_key] = final_output_length
+        canonical_signatures[final_signature] = max(
+            canonical_signatures.get(final_signature, 0),
+            final_output_length,
+        )
         _record_trace(
             "v",
             final_state.output,
@@ -315,6 +406,8 @@ class ProgramGenerator:
         final_program = final_state.opcodes
         final_output = final_state.output
         finished_ns = perf_counter_ns()
+        total_repeated = stats.repeated_state_pruned + signature_collisions
+        total_pruned = stats.pruned
 
         return GenerationResult(
             target=target,
@@ -323,15 +416,15 @@ class ProgramGenerator:
             stats={
                 "evaluations": stats.evaluations,
                 "cache_hits": stats.cache_hits,
-                "pruned": stats.pruned,
-                "repeated_state_pruned": stats.repeated_state_pruned,
+                "pruned": total_pruned,
+                "repeated_state_pruned": total_repeated,
                 "duration_ns": finished_ns - started_ns,
                 "trace_length": len(trace_events or []),
                 "pruned_ratio": (
-                    stats.pruned / stats.evaluations if stats.evaluations else 0.0
+                    total_pruned / stats.evaluations if stats.evaluations else 0.0
                 ),
                 "repeated_state_ratio": (
-                    stats.repeated_state_pruned / stats.pruned if stats.pruned else 0.0
+                    total_repeated / total_pruned if total_pruned else 0.0
                 ),
             },
             trace=trace_events or [],

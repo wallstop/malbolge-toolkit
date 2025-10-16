@@ -8,9 +8,11 @@ and avoids unnecessary allocations in tight loops.
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, field
 from threading import RLock
+from types import MethodType
+from typing import cast
 
 from .encoding import (
     ENCRYPTION_TRANSLATE,
@@ -50,12 +52,33 @@ class MalbolgeMachine:
     c: int = 0
     d: int = 0
     halted: bool = False
+    _encrypt_override: Callable[[MalbolgeMachine], None] | None = field(
+        default=None, init=False, repr=False, compare=False
+    )
+
+    def __setattr__(self, name: str, value: object) -> None:
+        if name == "encrypt_current_cell":
+            if value is None:
+                object.__setattr__(self, "_encrypt_override", None)
+                return
+            if isinstance(value, MethodType):
+                override_callable = value.__func__
+            else:
+                if not callable(value):
+                    raise TypeError(
+                        "encrypt_current_cell override must be callable or None."
+                    )
+                override_callable = cast(Callable[[MalbolgeMachine], None], value)
+            object.__setattr__(self, "_encrypt_override", override_callable)
+            return
+        object.__setattr__(self, name, value)
 
     def reset(self) -> None:
         self.a = 0
         self.c = 0
         self.d = 0
         self.halted = False
+        self._encrypt_override = None
 
     def load_tape(self, ascii_tape: Sequence[str]) -> None:
         self.tape = [ord(ch) for ch in ascii_tape]
@@ -64,9 +87,15 @@ class MalbolgeMachine:
         self.reset()
 
     def copy(self) -> MalbolgeMachine:
-        return MalbolgeMachine(self.tape.copy(), self.a, self.c, self.d, self.halted)
+        clone = MalbolgeMachine(self.tape.copy(), self.a, self.c, self.d, self.halted)
+        if self._encrypt_override is not None:
+            object.__setattr__(clone, "_encrypt_override", self._encrypt_override)
+        return clone
 
     def encrypt_current_cell(self) -> None:
+        if self._encrypt_override is not None:
+            self._encrypt_override(self)
+            return
         cell_value = self.tape[self.c]
         if 33 <= cell_value <= 126:
             self.tape[self.c] = ord(ENCRYPTION_TRANSLATE[cell_value - 33])
