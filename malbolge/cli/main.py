@@ -14,7 +14,9 @@ from __future__ import annotations
 import argparse
 import importlib
 import json
+import logging
 import sys
+from collections import Counter
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -26,10 +28,21 @@ from malbolge import (
     normalize,
 )
 from malbolge.encoding import InvalidProgramError
+from malbolge.interpreter import DEFAULT_CYCLE_DETECTION_LIMIT
+
+logger = logging.getLogger(__name__)
+log = logging.LoggerAdapter(logger, {"component": __name__})
 
 
 def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="malbolge")
+    parser.add_argument(
+        "--log-level",
+        default="WARNING",
+        type=str.upper,
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        help="Set logging verbosity (default: WARNING).",
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     run_parser = subparsers.add_parser(
@@ -53,6 +66,20 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
             "Path to a file containing ASCII Malbolge source to normalize before "
             "execution."
         ),
+    )
+    cycle_group = run_parser.add_mutually_exclusive_group()
+    cycle_group.add_argument(
+        "--cycle-limit",
+        type=int,
+        help=(
+            "Override the number of unique states tracked for cycle detection "
+            f"(default: {DEFAULT_CYCLE_DETECTION_LIMIT})."
+        ),
+    )
+    cycle_group.add_argument(
+        "--no-cycle-detection",
+        action="store_true",
+        help="Disable cycle detection tracking entirely.",
     )
 
     generate_parser = subparsers.add_parser(
@@ -88,7 +115,20 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
 
 
 def handle_run(args: argparse.Namespace) -> int:
-    interpreter = MalbolgeInterpreter()
+    if args.no_cycle_detection:
+        cycle_limit: int | None = None
+    elif args.cycle_limit is not None:
+        if args.cycle_limit < 0:
+            _emit_error(
+                "cycle detection limit must be non-negative",
+                context={"command": "run"},
+            )
+            return 1
+        cycle_limit = args.cycle_limit
+    else:
+        cycle_limit = DEFAULT_CYCLE_DETECTION_LIMIT
+
+    interpreter = MalbolgeInterpreter(cycle_detection_limit=cycle_limit)
     try:
         if args.opcodes:
             opcodes = args.opcodes
@@ -107,13 +147,17 @@ def handle_run(args: argparse.Namespace) -> int:
             opcodes = "".join(normalize(ascii_source))
         result = interpreter.execute(opcodes, capture_machine=True)
     except (OSError, UnicodeDecodeError) as exc:
-        print(f"[error] failed to read program input: {exc}", file=sys.stderr)
+        _emit_error(
+            f"failed to read program input: {exc}",
+            context={"command": "run"},
+            exc=exc,
+        )
         return 1
     except InvalidProgramError as exc:
-        print(f"[error] {exc}", file=sys.stderr)
+        _emit_error(str(exc), context={"command": "run"})
         return 1
     except MalbolgeRuntimeError as exc:
-        print(f"[error] {exc}", file=sys.stderr)
+        _emit_error(str(exc), context={"command": "run"}, exc=exc)
         return 1
 
     print(result.output)
@@ -123,8 +167,9 @@ def handle_run(args: argparse.Namespace) -> int:
         print(f"halt_instruction={result.halt_metadata.last_instruction}")
     if result.halt_metadata.last_jump_target is not None:
         print(f"last_jump_target={result.halt_metadata.last_jump_target}")
-    if result.halt_metadata.cycle_detected:
-        print("cycle_detected=True")
+    print(f"cycle_detected={result.halt_metadata.cycle_detected}")
+    print(f"cycle_tracking_limited={result.halt_metadata.cycle_tracking_limited}")
+    print(f"cycle_repeat_length={result.halt_metadata.cycle_repeat_length}")
     print(f"memory_expansions={result.memory_expansions}")
     print(f"peak_tape_cells={result.peak_memory_cells}")
     if result.machine is not None:
@@ -143,7 +188,7 @@ def handle_generate(args: argparse.Namespace) -> int:
     try:
         result = generator.generate_for_string(args.text, config=config)
     except MalbolgeRuntimeError as exc:
-        print(f"[error] {exc}", file=sys.stderr)
+        _emit_error(str(exc), context={"command": "generate"}, exc=exc)
         return 1
 
     print(result.opcodes)
@@ -152,6 +197,10 @@ def handle_generate(args: argparse.Namespace) -> int:
     print(result.stats)
     if args.trace:
         print(f"trace={json.dumps(result.trace, ensure_ascii=False)}")
+        reason_counts = Counter(
+            event.get("reason", "unknown") for event in result.trace
+        )
+        print(f"trace_summary={json.dumps(reason_counts, ensure_ascii=False)}")
     return 0
 
 
@@ -167,12 +216,16 @@ def handle_bench(args: argparse.Namespace) -> int:
         if hasattr(module, "main"):
             module.main()
         else:
-            print(f"[warn] module {module_name} has no main()", file=sys.stderr)
+            _emit_warning(
+                f"module {module_name} has no main()",
+                context={"command": "bench", "module": module_name},
+            )
     return 0
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parse_args(argv)
+    _configure_logging(args.log_level)
     if args.command == "run":
         return handle_run(args)
     if args.command == "generate":
@@ -185,6 +238,32 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 def app() -> None:
     sys.exit(main())
+
+
+def _configure_logging(level_str: str) -> None:
+    level = getattr(logging, level_str.upper(), logging.WARNING)
+    logging.basicConfig(level=level, format="%(levelname)s:%(name)s:%(message)s")
+
+
+def _emit_error(
+    message: str,
+    *,
+    context: dict[str, object] | None = None,
+    exc: Exception | None = None,
+) -> None:
+    extra: dict[str, object] = {"status": "error"}
+    if context:
+        extra.update(context)
+    log.error(message, extra=extra, exc_info=exc)
+    print(f"[error] {message}", file=sys.stderr)
+
+
+def _emit_warning(message: str, *, context: dict[str, object] | None = None) -> None:
+    extra: dict[str, object] = {"status": "warn"}
+    if context:
+        extra.update(context)
+    log.warning(message, extra=extra)
+    print(f"[warn] {message}", file=sys.stderr)
 
 
 if __name__ == "__main__":

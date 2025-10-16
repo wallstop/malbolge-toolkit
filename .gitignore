@@ -3,3 +3,7 @@ __pycache__/
 .idea/
 .claude/
 .venv/
+benchmarks/latest.json
+benchmarks/baseline_summary.txt
+benchmarks/cycle_repeat_report.txt
+benchmarks/benchmark_report.md

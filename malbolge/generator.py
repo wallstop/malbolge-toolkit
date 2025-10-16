@@ -9,6 +9,7 @@ hooks for determinism and performance tuning.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from random import Random
 from time import perf_counter_ns
@@ -22,6 +23,8 @@ from .interpreter import (
 
 SIGNATURE_TAPE_WIDTH = 8
 StateSignature = tuple[int, int, int, int, tuple[int, ...]]
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(slots=True)
@@ -38,7 +41,7 @@ class GenerationResult:
     target: str
     opcodes: str
     machine_output: str
-    stats: dict[str, int]
+    stats: dict[str, int | float]
     trace: list[dict[str, object]] = field(default_factory=list)
 
     @property
@@ -73,7 +76,7 @@ class ProgramGenerator:
             SIGNATURE_TAPE_WIDTH if SIGNATURE_TAPE_WIDTH > 0 else len(machine.tape)
         )
         tail = tuple(machine.tape[-tail_width:]) if tail_width else ()
-        return (len(machine.tape), machine.a % 256, machine.c, machine.d, tail)
+        return len(machine.tape), machine.a % 256, machine.c, machine.d, tail
 
     def generate_for_string(
         self,
@@ -123,6 +126,16 @@ class ProgramGenerator:
             depth_level: int,
             target_prefix: str,
         ) -> None:
+            logger.debug(
+                "generation_trace_event",
+                extra={
+                    "status": reason,
+                    "candidate": candidate,
+                    "pruned": pruned,
+                    "cache_hit": cache_hit,
+                    "trace_depth": depth_level,
+                },
+            )
             if trace_events is None:
                 return
             trace_events.append(
@@ -314,6 +327,12 @@ class ProgramGenerator:
                 "repeated_state_pruned": stats.repeated_state_pruned,
                 "duration_ns": finished_ns - started_ns,
                 "trace_length": len(trace_events or []),
+                "pruned_ratio": (
+                    stats.pruned / stats.evaluations if stats.evaluations else 0.0
+                ),
+                "repeated_state_ratio": (
+                    stats.repeated_state_pruned / stats.pruned if stats.pruned else 0.0
+                ),
             },
             trace=trace_events or [],
         )

@@ -1,0 +1,48 @@
+name: CI
+on:
+  push:
+    branches: [ main, dev/** ]
+  pull_request:
+    branches: [ main, dev/** ]
+
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m pip install mypy ruff
+      - name: Lint
+        run: ruff check
+      - name: Type check
+        run: mypy malbolge
+      - name: Unit tests
+        run: python -m unittest discover -v
+      - name: Capture benchmark candidate
+        run: python -m benchmarks.capture_baseline --output benchmarks/latest.json
+      - name: Compare benchmark baseline
+        run: |
+          python -m benchmarks.compare_baseline \
+            --baseline benchmarks/baseline.json \
+            --candidate benchmarks/latest.json \
+            --allow-regression 10.0
+      - name: Generate benchmark summaries
+        run: |
+          python -m benchmarks.summarize_baseline --baseline benchmarks/latest.json > benchmarks/baseline_summary.txt
+          python -m benchmarks.cycle_repeat_report --baseline benchmarks/latest.json > benchmarks/cycle_repeat_report.txt
+          python -m benchmarks.render_benchmark_reports --baseline benchmarks/latest.json --output benchmarks/benchmark_report.md
+      - name: Upload benchmark artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-latest
+          path: |
+            benchmarks/latest.json
+            benchmarks/baseline_summary.txt
+            benchmarks/cycle_repeat_report.txt
+            benchmarks/benchmark_report.md

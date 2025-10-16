@@ -1,4 +1,4 @@
-# Examples
+﻿# Examples
 
 This directory contains runnable scripts that demonstrate common workflows with the modular `malbolge` package.
 
@@ -37,3 +37,21 @@ contains:
 - [`OP_CODES.txt`](./samples/OP_CODES.txt) — opcode cheat sheet that pairs well with the interpreter analyzer scripts.
 
 Feel free to add more scripts here as new features land. Keep example outputs deterministic by seeding through `GenerationConfig(random_seed=...)`.
+
+## trace_summary.py
+
+```
+python examples/trace_summary.py --text "Hi" --seed 42 --limit 5
+```
+
+Generates a summary of trace reasons and prints the first N trace events. Useful for comparing heuristic behaviour across seeds or configurations.
+
+## trace_viz.py
+
+```
+python examples/trace_viz.py --path traces/hello-trace.json
+# or stream directly from the generator
+python -m malbolge.cli generate --text "Hi" --seed 42 --trace | python examples/trace_viz.py --stdin
+```
+
+Transforms saved trace output into per-depth histograms and reason breakdowns, highlighting the first few retained candidates so you can spot heuristic bottlenecks quickly.

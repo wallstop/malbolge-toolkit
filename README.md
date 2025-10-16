@@ -1,4 +1,4 @@
-# MalbolgeGenerator
+﻿# MalbolgeGenerator
 
 **Automatically generate and execute programs in Malbolge, the most difficult esoteric programming language ever created.**
 
@@ -108,7 +108,7 @@ print(f"Steps executed: {execution.steps}")
 print(f"Halt reason: {execution.halt_reason}")
 ```
 
-**Note**: Legacy scripts can still import `MalbolgeInterpreter.py`; under the hood it proxies to the new package.
+**Note**: Legacy imports are now fully superseded by the modular `malbolge` package—update any remaining references to `MalbolgeInterpreter.py`.
 
 ## Command-Line Interface (CLI)
 
@@ -130,6 +130,8 @@ python -m malbolge.cli generate --text "ABC" --max-depth 10 --opcodes "op*"
 python -m malbolge.cli generate --text "ABC" --seed 42 --trace
 ```
 
+
+Tip: use `--log-level INFO` or `--log-level DEBUG` with any CLI command to see structured log output.
 ### 2. Run Programs
 
 ```bash
@@ -138,7 +140,17 @@ python -m malbolge.cli run --opcodes "v"
 
 # Run using ASCII Malbolge source
 python -m malbolge.cli run --ascii "(=<\`#9]~6ZY32Vx/4Rs+0No-&Jk)\"Fh}|Bcy?"
+
+# Raise the cycle detection cap to track more unique states
+python -m malbolge.cli run --opcodes "ioooooo...p<v" --cycle-limit 200000
+
+# Disable cycle detection entirely while investigating infinite loops
+python -m malbolge.cli run --opcodes "ioooooo...p<v" --no-cycle-detection
 ```
+
+Each run prints `cycle_detected=`, `cycle_repeat_length=`, and `cycle_tracking_limited=` so you can tell whether loops were detected, how long the repeat was, and whether the configured limit truncated tracking.
+
+> Interpreter benchmarks now include a synthetic `loop_small` case that forces a cycle (repeat length 2) so telemetry remains easy to validate.
 
 ### 3. Benchmark Performance
 
@@ -151,7 +163,24 @@ python -m malbolge.cli bench --module generator
 
 # Benchmark everything
 python -m malbolge.cli bench --module all
+
+# Capture baseline metrics (JSON)
+python benchmarks/capture_baseline.py --output benchmarks/baseline.json
+
+# Compare a fresh run against the saved baseline
+python benchmarks/compare_baseline.py --candidate benchmarks/latest.json --allow-regression 10
+
+# Summarise the committed baseline for dashboards or quick checks
+python benchmarks/summarize_baseline.py --baseline benchmarks/baseline.json
+
+# Render cycle repeat-length histograms from interpreter baselines
+python benchmarks/cycle_repeat_report.py --baseline benchmarks/baseline.json
+
+# Generate CI-friendly markdown summary with histogram blocks
+python benchmarks/render_benchmark_reports.py --baseline benchmarks/baseline.json --output benchmarks/benchmark_report.md
 ```
+
+The comparison script prints per-case deltas for fastest and average timings, failing the run when slowdowns exceed the allowed percentage so regressions surface quickly. The summariser produces a concise text snapshot you can drop into dashboards or share in review threads, the cycle report highlights repeat-length distributions, and the Markdown renderer rolls everything into a single artifact. CI publishes `latest.json`, the text summary, the histogram report, and the Markdown bundle for every push.
 
 ## Examples and Learning Resources
 
@@ -234,6 +263,8 @@ print(f"Halted: {result.halted}")           # True if program finished
 print(f"Steps: {result.steps}")             # Instructions executed
 print(f"Halt reason: {result.halt_reason}") # e.g., "halt_opcode", "end_of_program"
 print(f"Halt instruction: {result.halt_metadata.last_instruction}")
+print(f"Cycle repeat length: {result.halt_metadata.cycle_repeat_length}")
+print(f"Cycle tracking limited: {result.halt_metadata.cycle_tracking_limited}")
 print(f"Memory expansions: {result.memory_expansions}")
 print(f"Peak tape cells: {result.peak_memory_cells}")
 if result.halt_metadata.last_jump_target is not None:
@@ -271,6 +302,8 @@ except MalbolgeRuntimeError as e:
     print(f"Execution failed: {e}")
 ```
 
+> **Thread safety:** Interpreters guard execution with an internal re-entrant lock, so sharing one instance across threads is safe but serialized. For throughput, prefer creating a dedicated interpreter per worker.
+
 ### Generating Malbolge Programs
 
 The `ProgramGenerator` automatically synthesizes programs using breadth-first search:
@@ -306,6 +339,8 @@ print(f"Cache hits: {stats['cache_hits']}")      # Reused snapshots
 print(f"Pruned: {stats['pruned']}")              # Dead branches eliminated
 print(f"Duration: {stats['duration_ns']/1e6}ms") # Time taken
 print(f"Repeated state pruned: {stats['repeated_state_pruned']}")
+print(f"Pruned ratio: {stats['pruned_ratio']:.3f}")
+print(f"Repeated state ratio: {stats['repeated_state_ratio']:.3f}")
 print(f"Trace length: {stats['trace_length']} (events captured)")
 ```
 
@@ -368,6 +403,18 @@ Test coverage includes:
 - CLI command parsing
 - Interpreter halt metadata (jump targets, memory diagnostics)
 - Generator heuristics (repeated-state pruning, trace capture)
+- Encoding helper cache behaviour (LRU) and opcode validation
+
+### Benchmark Baselines
+
+Capture and persist performance telemetry for regression checks:
+
+```bash
+python benchmarks/capture_baseline.py --output benchmarks/baseline.json
+```
+
+The resulting JSON summarises interpreter cycle/memory metadata and generator
+heuristic ratios for each benchmark case.
 
 ### Development Setup
 
@@ -523,3 +570,24 @@ If you use this project in academic work, please cite:
 ---
 
 **Ready to explore the most difficult programming language ever created?** Start with the [Malbolge Primer](docs/MALBOLGE_PRIMER.md) and then try generating your first program!
+
+### Trace Summaries
+
+Inspect pruning reasons quickly using:
+
+```bash
+python examples/trace_summary.py --text "Hi" --seed 42 --limit 5
+```
+
+
+This prints combined stats, a reason histogram, and the first N trace events for deeper analysis or regression comparisons.
+
+Need a richer view? Turn the trace into depth/ reason histograms:
+
+```bash
+python examples/trace_viz.py --path traces/hello-trace.json
+# or stream directly from the generator
+python -m malbolge.cli generate --text "Hi" --seed 42 --trace | python examples/trace_viz.py --stdin
+```
+
+The visualiser renders per-depth bars, reason counts, and the first few retained candidates so you can spot heuristic bottlenecks at a glance.

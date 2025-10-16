@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import functools
 from collections.abc import Iterable
 
 NORMAL_TRANSLATE = (
@@ -41,6 +42,11 @@ def normalize(instruction_list: Iterable[str]) -> list[str]:
     return list(return_string)
 
 
+@functools.cache
+def _opcode_offset(opcode: str, index: int) -> int:
+    return (NORMAL_TRANSLATE.index(opcode) - index) % 94
+
+
 def reverse_normalize(
     instruction_list: Iterable[str],
     *,
@@ -57,7 +63,7 @@ def reverse_normalize(
         if char not in VALID_INSTRUCTIONS:
             raise InvalidProgramError("Invalid opcode encountered during decoding.")
         index = start_index + offset
-        translated = chr(((NORMAL_TRANSLATE.index(char) - index) % 94) + 33)
+        translated = chr(_opcode_offset(char, index) + 33)
         return_string += translated
 
     return list(return_string)

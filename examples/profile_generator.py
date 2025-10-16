@@ -65,10 +65,10 @@ def main() -> None:
         duration = time.perf_counter() - start
 
         durations.append(duration)
-        evaluations.append(result.stats.get("evaluations", 0))
-        cache_hits.append(result.stats.get("cache_hits", 0))
-        pruned.append(result.stats.get("pruned", 0))
-        repeated_pruned.append(result.stats.get("repeated_state_pruned", 0))
+        evaluations.append(int(result.stats.get("evaluations", 0) or 0))
+        cache_hits.append(int(result.stats.get("cache_hits", 0) or 0))
+        pruned.append(int(result.stats.get("pruned", 0) or 0))
+        repeated_pruned.append(int(result.stats.get("repeated_state_pruned", 0) or 0))
 
         print(
             f"[run {run+1}] duration={duration:.6f}s "

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
+from threading import RLock
 
 from .encoding import (
     ENCRYPTION_TRANSLATE,
@@ -19,7 +20,7 @@ from .encoding import (
 )
 from .utils import MAX_ADDRESS_SPACE, crazy_operation, ternary_rotate
 
-CYCLE_DETECTION_LIMIT = 100_000
+DEFAULT_CYCLE_DETECTION_LIMIT = 100_000
 
 
 class MalbolgeRuntimeError(RuntimeError):
@@ -76,6 +77,8 @@ class HaltMetadata:
     last_instruction: str | None = None
     last_jump_target: int | None = None
     cycle_detected: bool = False
+    cycle_tracking_limited: bool = False
+    cycle_repeat_length: int | None = None
 
 
 @dataclass(slots=True)
@@ -102,6 +105,7 @@ class MalbolgeInterpreter:
         *,
         allow_memory_expansion: bool = True,
         memory_limit: int | None = MAX_ADDRESS_SPACE,
+        cycle_detection_limit: int | None = DEFAULT_CYCLE_DETECTION_LIMIT,
     ) -> None:
         self.machine = MalbolgeMachine()
         self._allow_memory_expansion = allow_memory_expansion
@@ -109,10 +113,16 @@ class MalbolgeInterpreter:
             memory_limit if memory_limit is not None else MAX_ADDRESS_SPACE
         )
         self._program_length = 0
+        self._cycle_detection_limit = cycle_detection_limit
         self._memory_expansions = 0
         self._peak_tape_length = 0
+        self._lock = RLock()
 
     def load_program(self, opcodes: Sequence[str]) -> None:
+        with self._lock:
+            self._load_program_unlocked(opcodes)
+
+    def _load_program_unlocked(self, opcodes: Sequence[str]) -> None:
         if len(opcodes) == 0:
             raise InvalidOpcodeError("Opcode sequence is empty.")
         if any(opcode not in VALID_INSTRUCTIONS for opcode in opcodes):
@@ -135,12 +145,13 @@ class MalbolgeInterpreter:
         max_steps: int | None = None,
         capture_machine: bool = False,
     ) -> ExecutionResult:
-        self.load_program(opcodes)
-        return self.resume_execution(
-            input_buffer=input_buffer,
-            max_steps=max_steps,
-            capture_machine=capture_machine,
-        )
+        with self._lock:
+            self._load_program_unlocked(opcodes)
+            return self._execute_loaded(
+                input_buffer=input_buffer,
+                max_steps=max_steps,
+                capture_machine=capture_machine,
+            )
 
     def run(
         self,
@@ -177,12 +188,13 @@ class MalbolgeInterpreter:
         max_steps: int | None = None,
         capture_machine: bool = False,
     ) -> ExecutionResult:
-        self._reset_diagnostics()
-        return self._execute_loaded(
-            input_buffer=input_buffer,
-            max_steps=max_steps,
-            capture_machine=capture_machine,
-        )
+        with self._lock:
+            self._reset_diagnostics()
+            return self._execute_loaded(
+                input_buffer=input_buffer,
+                max_steps=max_steps,
+                capture_machine=capture_machine,
+            )
 
     def execute_from_snapshot(
         self,
@@ -193,19 +205,22 @@ class MalbolgeInterpreter:
         max_steps: int | None = None,
         capture_machine: bool = False,
     ) -> ExecutionResult:
-        machine = snapshot.copy()
-        prefix_length = len(machine.tape)
-        if suffix_opcodes:
-            ascii_suffix = reverse_normalize(suffix_opcodes, start_index=prefix_length)
-            machine.tape.extend(ord(ch) for ch in ascii_suffix)
-        self.machine = machine
-        self._program_length = prefix_length + len(suffix_opcodes)
-        self._reset_diagnostics()
-        return self._execute_loaded(
-            input_buffer=input_buffer,
-            max_steps=max_steps,
-            capture_machine=capture_machine,
-        )
+        with self._lock:
+            machine = snapshot.copy()
+            prefix_length = len(machine.tape)
+            if suffix_opcodes:
+                ascii_suffix = reverse_normalize(
+                    suffix_opcodes, start_index=prefix_length
+                )
+                machine.tape.extend(ord(ch) for ch in ascii_suffix)
+            self.machine = machine
+            self._program_length = prefix_length + len(suffix_opcodes)
+            self._reset_diagnostics()
+            return self._execute_loaded(
+                input_buffer=input_buffer,
+                max_steps=max_steps,
+                capture_machine=capture_machine,
+            )
 
     def _execute_loaded(
         self,
@@ -223,7 +238,9 @@ class MalbolgeInterpreter:
         steps_executed = 0
         halt_reason: str | None = None
         metadata = HaltMetadata()
-        seen_states: set[tuple[int, int, int, int]] = set()
+        seen_states: dict[tuple[int, int, int, int], int] = {}
+        tracking_limited = False
+        cycle_limit = self._cycle_detection_limit
 
         while not machine.halted:
             if steps_remaining is not None:
@@ -237,20 +254,25 @@ class MalbolgeInterpreter:
 
             self._ensure_capacity(machine.c)
             cell_value = machine.tape[machine.c]
-            if len(seen_states) < CYCLE_DETECTION_LIMIT:
+            if cycle_limit is not None:
                 state_key = (machine.c, cell_value, machine.a, machine.d)
-                if state_key in seen_states:
+                first_seen = seen_states.get(state_key)
+                if first_seen is not None:
+                    if metadata.cycle_repeat_length is None:
+                        metadata.cycle_repeat_length = steps_executed - first_seen
                     metadata.cycle_detected = True
+                elif len(seen_states) < cycle_limit:
+                    seen_states[state_key] = steps_executed
                 else:
-                    seen_states.add(state_key)
+                    tracking_limited = True
             instruction = self._instruction_at(machine.c)
             metadata.last_instruction = instruction
-            metadata.last_jump_target = None
 
             if instruction == "i":
                 self._ensure_capacity(machine.d)
                 jump_target = machine.tape[machine.d]
                 machine.c = jump_target
+                self._ensure_capacity(machine.c)
                 metadata.last_jump_target = jump_target
             elif instruction == "<":
                 output_chars.append(chr(machine.a % 256))
@@ -272,6 +294,7 @@ class MalbolgeInterpreter:
                 self._ensure_capacity(machine.d)
                 jump_target = machine.tape[machine.d]
                 machine.d = jump_target
+                self._ensure_capacity(machine.d)
                 metadata.last_jump_target = jump_target
             elif instruction == "p":
                 self._ensure_capacity(machine.d)
@@ -294,6 +317,7 @@ class MalbolgeInterpreter:
 
         if halt_reason is None:
             halt_reason = "unknown"
+        metadata.cycle_tracking_limited = tracking_limited
         snapshot = machine.copy() if capture_machine else None
         return ExecutionResult(
             output="".join(output_chars),

@@ -31,10 +31,12 @@ CASES: list[BenchmarkCase] = [
 ]
 
 
-def time_generation(case: BenchmarkCase) -> tuple[float, float, dict[str, int]]:
+def time_generation(
+    case: BenchmarkCase,
+) -> tuple[float, float, dict[str, int | float]]:
     generator = ProgramGenerator()
     measurements: list[float] = []
-    stats: dict[str, int] = {}
+    stats: dict[str, int | float] = {}
 
     for _ in range(case.runs):
         start = time.perf_counter()

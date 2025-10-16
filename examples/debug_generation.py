@@ -83,6 +83,7 @@ def main() -> None:
     if execution.halt_metadata.last_jump_target is not None:
         print(f"Last jump target: {execution.halt_metadata.last_jump_target}")
     print(f"Cycle detected: {execution.halt_metadata.cycle_detected}")
+    print(f"Cycle tracking limited: {execution.halt_metadata.cycle_tracking_limited}")
     print(f"Memory expansions: {execution.memory_expansions}")
     print(f"Peak tape cells: {execution.peak_memory_cells}")
     if execution.machine is not None:

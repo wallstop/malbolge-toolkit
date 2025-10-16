@@ -1,4 +1,4 @@
-# Malbolge CLI & Toolkit Tutorial
+﻿# Malbolge CLI & Toolkit Tutorial
 
 **Complete guide to using MalbolgeGenerator for program synthesis and execution**
 
@@ -10,6 +10,8 @@ Before starting, make sure you understand:
 - Virtual environments (recommended but optional)
 
 **New to Malbolge?** Read [MALBOLGE_PRIMER.md](MALBOLGE_PRIMER.md) first to understand what Malbolge is and why we need automated generation!
+
+**Migrating from earlier releases?** Imports now flow through the modular `malbolge` package. See [RELEASE_NOTES.md](RELEASE_NOTES.md) for a quick checklist covering the retirement of `MalbolgeInterpreter.py`, new CLI entry points, and other breaking changes.
 
 ---
 
@@ -111,6 +113,8 @@ Hi
 4. **Line 4**: Statistics (how it was generated)
 5. **Lines 5-8**: Interpreter diagnostics (halt reason, last instruction, memory growth)
 
+
+> Tip: Pass `--log-level INFO` (or DEBUG) to CLI commands to stream diagnostics while troubleshooting.
 ### Run the Program
 
 Copy the opcodes from line 1 and run:
@@ -131,6 +135,9 @@ Hi
 halt_reason=halt_opcode
 steps=120
 halt_instruction=v
+cycle_detected=False
+cycle_repeat_length=None
+cycle_tracking_limited=False
 memory_expansions=0
 peak_tape_cells=218
 tape_length=218
@@ -141,7 +148,9 @@ Congratulations! You just generated and executed your first Malbolge program!
 The additional diagnostics indicate which opcode halted execution, whether any
 memory expansion occurred, and the peak tape size. These values are mirrored in
 the Python API via `ExecutionResult.halt_metadata`, `memory_expansions`, and
-`peak_memory_cells`.
+`peak_memory_cells`. The `cycle_detected` flag exposes loop discovery, `cycle_repeat_length`
+reports the number of steps between repeated states, and `cycle_tracking_limited` shows when cycle
+detection sampling reached its limit (tune via `MalbolgeInterpreter(..., cycle_detection_limit=...)`).
 
 ---
 
@@ -200,7 +209,7 @@ python -m malbolge.cli generate --text "ABC" --seed 42 --trace  # Emit JSON trac
 **Parameters explained:**
 - `--max-depth N`: How many levels to explore before randomizing (default: 5)
 - `--opcodes STR`: Which opcodes to try during search (default: "op*")
-- `--trace`: Print a JSON array of trace events (also sets `trace_length`)
+- `--trace`: Print a JSON array of trace events (also sets `trace_length`) and a summary of reasons.
 
 ### Saving Output
 
@@ -224,6 +233,12 @@ python -m malbolge.cli run --opcodes "v"
 
 # Generated program (paste opcodes)
 python -m malbolge.cli run --opcodes "iooo*p<v"
+
+# Track up to 250k unique states when checking for loops
+python -m malbolge.cli run --opcodes "iooo*p<v" --cycle-limit 250000
+
+# Disable cycle detection entirely while inspecting infinite loops
+python -m malbolge.cli run --opcodes "iooo*p<v" --no-cycle-detection
 ```
 
 ### Run from ASCII Source
@@ -239,8 +254,13 @@ python -m malbolge.cli run --ascii "(=<\`#9]~6ZY32Vx/4Rs+0No-&Jk)\"Fh}|Bcy?\`=*z
 Hello World!
 halt_reason=end_of_program
 steps=104572
+cycle_detected=False
+cycle_repeat_length=None
+cycle_tracking_limited=False
 tape_length=59049
 ```
+
+The cycle tracking fields indicate whether the interpreter detected a loop or hit the configured tracking limit.
 
 ### Run from File
 
@@ -359,6 +379,29 @@ python -m malbolge.cli bench --module generator
 # Benchmark everything
 python -m malbolge.cli bench --module all
 ```
+
+### Capture Baseline JSON
+
+Snapshot interpreter and generator telemetry for regression tracking:
+
+```bash
+python benchmarks/capture_baseline.py --output benchmarks/baseline.json
+```
+
+The JSON output records cycle detection metadata, memory growth, and generator
+heuristic ratios so you can diff performance over time.
+
+Compare a fresh run against the baseline with:
+
+```bash
+python benchmarks/compare_baseline.py --candidate benchmarks/latest.json --allow-regression 10
+
+python benchmarks/summarize_baseline.py --baseline benchmarks/baseline.json
+
+python benchmarks/cycle_repeat_report.py --baseline benchmarks/baseline.json
+```
+
+The comparison script prints per-case deltas for fastest/average timings and exits with an error when slowdowns exceed the permitted percentage so regressions stand out immediately. The summariser produces a concise text snapshot for dashboards or review notes, the cycle report visualises repeat-length distributions captured during interpreter runs, and the Markdown renderer bundles everything together. Continuous integration uploads the JSON, summary, histogram, and Markdown report so you can inspect performance from any successful build. Interpreter benchmarks include a synthetic `loop_small` case that forces a repeat length of 2 so histogram trends remain easy to spot.
 
 ---
 
@@ -708,3 +751,24 @@ when passing precomputed sequences to the CLI with `--ascii-file`.
 ---
 
 **Happy Malbolge programming!** Remember: if you can generate it, you've accomplished what most humans can't do by hand! 🎉
+
+### Visualising Trace Summaries
+
+Trace summaries help identify why candidates are pruned. Generate a summary with:
+
+```bash
+python examples/trace_summary.py --text "Hi" --seed 42 --limit 5
+```
+
+
+The script prints aggregated reason counts and the first N events so you can compare heuristics across seeds or configuration tweaks.
+
+For a deeper dive, transform the trace into per-depth histograms:
+
+```bash
+python examples/trace_viz.py --path traces/hello-trace.json
+# or stream directly from a generator run
+python -m malbolge.cli generate --text "Hi" --seed 42 --trace | python examples/trace_viz.py --stdin
+```
+
+The visualiser highlights depth hotspots, reason frequencies, and the first few surviving candidates to guide further heuristic tuning.

@@ -22,9 +22,13 @@ class GeneratorTests(unittest.TestCase):
         self.assertIn("duration_ns", result.stats)
         self.assertIn("repeated_state_pruned", result.stats)
         self.assertIn("trace_length", result.stats)
+        self.assertIn("pruned_ratio", result.stats)
+        self.assertIn("repeated_state_ratio", result.stats)
         self.assertGreater(result.stats["evaluations"], 0)
         self.assertGreaterEqual(result.stats["pruned"], 0)
         self.assertGreater(result.stats["duration_ns"], 0)
+        self.assertGreaterEqual(result.stats["pruned_ratio"], 0.0)
+        self.assertGreaterEqual(result.stats["repeated_state_ratio"], 0.0)
         self.assertEqual(result.stats["trace_length"], 0)
         self.assertEqual(result.trace, [])
 
@@ -72,6 +76,7 @@ class GeneratorTests(unittest.TestCase):
         finally:
             patched_generator._state_signature = original_signature
         self.assertGreater(result.stats["repeated_state_pruned"], 0)
+        self.assertGreater(result.stats["repeated_state_ratio"], 0.0)
 
     def test_capture_trace_records_events(self) -> None:
         generator = ProgramGenerator()
