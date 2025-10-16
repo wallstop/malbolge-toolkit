@@ -3,21 +3,21 @@
 
 from __future__ import annotations
 
-from typing import Iterable, List, Sequence
+from collections.abc import Sequence
 
 MAX_ADDRESS_SPACE = 59049
 TERNARY_DIGITS = 10
-POWERS_OF_THREE = tuple(3**i for i in range(TERNARY_DIGITS))
-MAX_TERNARY_POWER = POWERS_OF_THREE[-1]
-_CRAZY_TABLE = (1, 1, 2, 0, 0, 2, 0, 2, 1)
+POWERS_OF_THREE: tuple[int, ...] = tuple(3**i for i in range(TERNARY_DIGITS))
+MAX_TERNARY_POWER: int = POWERS_OF_THREE[-1]
+_CRAZY_TABLE: tuple[int, ...] = (1, 1, 2, 0, 0, 2, 0, 2, 1)
 
 
-def convert_to_base3(value: int, digits: int = TERNARY_DIGITS) -> List[int]:
+def convert_to_base3(value: int, digits: int = TERNARY_DIGITS) -> list[int]:
     """Return the ternary representation (least significant digit first)."""
     if value < 0:
         raise ValueError("Malbolge numbers must be non-negative.")
 
-    result: List[int] = [0] * digits
+    result: list[int] = [0] * digits
     current = value
     idx = 0
     while current and idx < digits:

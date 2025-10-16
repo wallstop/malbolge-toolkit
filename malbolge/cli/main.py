@@ -13,15 +13,16 @@ from __future__ import annotations
 
 import argparse
 import importlib
+import json
 import sys
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
 
 from malbolge import (
     GenerationConfig,
-    ProgramGenerator,
     MalbolgeInterpreter,
     MalbolgeRuntimeError,
+    ProgramGenerator,
     normalize,
 )
 from malbolge.encoding import InvalidProgramError
@@ -48,7 +49,10 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     run_group.add_argument(
         "--ascii-file",
         type=Path,
-        help="Path to a file containing ASCII Malbolge source to normalize before execution.",
+        help=(
+            "Path to a file containing ASCII Malbolge source to normalize before "
+            "execution."
+        ),
     )
 
     generate_parser = subparsers.add_parser(
@@ -66,6 +70,11 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     )
     generate_parser.add_argument(
         "--opcodes", default="op*", help="Opcode choices considered during search."
+    )
+    generate_parser.add_argument(
+        "--trace",
+        action="store_true",
+        help="Capture a detailed search trace (printed as JSON).",
     )
 
     bench_parser = subparsers.add_parser(
@@ -110,6 +119,14 @@ def handle_run(args: argparse.Namespace) -> int:
     print(result.output)
     print(f"halt_reason={result.halt_reason}")
     print(f"steps={result.steps}")
+    if result.halt_metadata.last_instruction is not None:
+        print(f"halt_instruction={result.halt_metadata.last_instruction}")
+    if result.halt_metadata.last_jump_target is not None:
+        print(f"last_jump_target={result.halt_metadata.last_jump_target}")
+    if result.halt_metadata.cycle_detected:
+        print("cycle_detected=True")
+    print(f"memory_expansions={result.memory_expansions}")
+    print(f"peak_tape_cells={result.peak_memory_cells}")
     if result.machine is not None:
         print(f"tape_length={len(result.machine.tape)}")
     return 0
@@ -121,6 +138,7 @@ def handle_generate(args: argparse.Namespace) -> int:
         opcode_choices=args.opcodes,
         max_search_depth=args.max_depth,
         random_seed=args.seed,
+        capture_trace=args.trace,
     )
     try:
         result = generator.generate_for_string(args.text, config=config)
@@ -132,6 +150,8 @@ def handle_generate(args: argparse.Namespace) -> int:
     print(result.malbolge_program)
     print(result.machine_output)
     print(result.stats)
+    if args.trace:
+        print(f"trace={json.dumps(result.trace, ensure_ascii=False)}")
     return 0
 
 

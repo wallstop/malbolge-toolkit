@@ -17,8 +17,9 @@ from .encoding import (
 from .generator import GenerationConfig, GenerationResult, ProgramGenerator
 from .interpreter import (
     ExecutionResult,
-    InvalidOpcodeError,
+    HaltMetadata,
     InputUnderflowError,
+    InvalidOpcodeError,
     MalbolgeInterpreter,
     MalbolgeMachine,
     MalbolgeRuntimeError,
@@ -29,8 +30,8 @@ from .utils import (
     MAX_ADDRESS_SPACE,
     POWERS_OF_THREE,
     TERNARY_DIGITS,
-    convert_to_base10,
     convert_to_base3,
+    convert_to_base10,
     crazy_operation,
     ternary_rotate,
 )
@@ -45,6 +46,7 @@ __all__ = [
     "GenerationResult",
     "ProgramGenerator",
     "ExecutionResult",
+    "HaltMetadata",
     "InvalidOpcodeError",
     "InputUnderflowError",
     "MalbolgeInterpreter",

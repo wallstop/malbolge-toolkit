@@ -13,13 +13,14 @@ import statistics
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-
-from malbolge import GenerationConfig, ProgramGenerator
+try:
+    from malbolge import GenerationConfig, ProgramGenerator
+except ImportError:  # pragma: no cover - fallback for direct script invocation
+    REPO_ROOT = Path(__file__).resolve().parents[1]
+    if str(REPO_ROOT) not in sys.path:
+        sys.path.insert(0, str(REPO_ROOT))
+    from malbolge import GenerationConfig, ProgramGenerator
 
 
 def parse_args() -> argparse.Namespace:
@@ -52,10 +53,11 @@ def main() -> None:
         random_seed=args.seed,
     )
 
-    durations: List[float] = []
-    evaluations: List[int] = []
-    cache_hits: List[int] = []
-    pruned: List[int] = []
+    durations: list[float] = []
+    evaluations: list[int] = []
+    cache_hits: list[int] = []
+    pruned: list[int] = []
+    repeated_pruned: list[int] = []
 
     for run in range(args.runs):
         start = time.perf_counter()
@@ -66,20 +68,24 @@ def main() -> None:
         evaluations.append(result.stats.get("evaluations", 0))
         cache_hits.append(result.stats.get("cache_hits", 0))
         pruned.append(result.stats.get("pruned", 0))
+        repeated_pruned.append(result.stats.get("repeated_state_pruned", 0))
 
         print(
-            f"[run {run+1}] duration={duration:.6f}s evaluations={evaluations[-1]} cache_hits={cache_hits[-1]} pruned={pruned[-1]}"
+            f"[run {run+1}] duration={duration:.6f}s "
+            f"evaluations={evaluations[-1]} cache_hits={cache_hits[-1]} "
+            f"pruned={pruned[-1]} repeated_pruned={repeated_pruned[-1]}"
         )
 
     print("\n=== Summary ===")
     print(f"Target: {args.text!r}")
     print(f"Runs: {args.runs}")
-    print(
-        f"Duration fastest: {min(durations):.6f}s  average: {statistics.mean(durations):.6f}s"
-    )
+    fastest = min(durations)
+    average_duration = statistics.mean(durations)
+    print(f"Duration fastest: {fastest:.6f}s  average: {average_duration:.6f}s")
     print(f"Evaluations avg: {statistics.mean(evaluations):.2f}")
     print(f"Cache hits avg: {statistics.mean(cache_hits):.2f}")
     print(f"Pruned avg: {statistics.mean(pruned):.2f}")
+    print(f"Repeated pruned avg: {statistics.mean(repeated_pruned):.2f}")
 
 
 if __name__ == "__main__":

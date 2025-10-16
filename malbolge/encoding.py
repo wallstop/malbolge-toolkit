@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import Iterable, List
+from collections.abc import Iterable
 
 NORMAL_TRANSLATE = (
     "+b(29e*j1VMEKLyC})8&m#~W>qxdRp0wkrUo[D7,XTcA\"lI.v%{gJh4G\\-=O@5`_3i<?Z'"
@@ -21,7 +21,7 @@ class InvalidProgramError(ValueError):
     """Raised when a program cannot be normalized."""
 
 
-def normalize(instruction_list: Iterable[str]) -> List[str]:
+def normalize(instruction_list: Iterable[str]) -> list[str]:
     """
     Convert ASCII characters to Malbolge opcodes.
 
@@ -45,7 +45,7 @@ def reverse_normalize(
     instruction_list: Iterable[str],
     *,
     start_index: int = 0,
-) -> List[str]:
+) -> list[str]:
     """Encode Malbolge opcodes back into printable ASCII characters."""
     instruction_list = list(instruction_list)
     total_length = start_index + len(instruction_list)

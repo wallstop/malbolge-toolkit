@@ -28,7 +28,7 @@ Malbolge (named after the 8th circle of Hell) is an esoteric programming languag
 
 This project ships as a modular Python package (`malbolge`) with:
 
-- **`ProgramGenerator`**: Deterministic, cache-aware synthesis engine that generates Malbolge programs for any target string
+- **`ProgramGenerator`**: Deterministic, cache-aware synthesis engine with repeated-state pruning and optional trace capture for any target string
 - **`MalbolgeInterpreter`**: High-performance execution engine with configurable memory limits and structured results
 - **Utility Modules**: Encoding/decoding, base-3 arithmetic, and crazy-operation simulation
 - **CLI Tools**: Command-line interface for generation, execution, and benchmarking
@@ -69,7 +69,14 @@ Output:
 Opcodes: ioooooo...p<v
 ASCII: (scrambled characters)
 Output: Hello
-Stats: {'evaluations': 12453, 'cache_hits': 42, ...}
+Stats: {
+    'evaluations': 12453,
+    'cache_hits': 42,
+    'pruned': 11890,
+    'repeated_state_pruned': 512,
+    'duration_ns': 80432123,
+    'trace_length': 0
+}
 ```
 
 Run it:
@@ -118,6 +125,9 @@ python -m malbolge.cli generate --text "Hello" --seed 42
 
 # Tune search parameters
 python -m malbolge.cli generate --text "ABC" --max-depth 10 --opcodes "op*"
+
+# Capture a detailed search trace (JSON printed to stdout)
+python -m malbolge.cli generate --text "ABC" --seed 42 --trace
 ```
 
 ### 2. Run Programs
@@ -181,8 +191,9 @@ python examples/profile_generator.py --text "Hello" --runs 5
 Runs multiple generation cycles and reports:
 - Average evaluation count
 - Cache hit rates
-- Branch pruning efficiency
+- Branch pruning efficiency (including repeated-state prunes)
 - Duration statistics
+- Trace length (if `capture_trace` is enabled)
 
 ### Interactive Notebook
 
@@ -222,6 +233,13 @@ print(f"Output: {result.output}")           # Text output
 print(f"Halted: {result.halted}")           # True if program finished
 print(f"Steps: {result.steps}")             # Instructions executed
 print(f"Halt reason: {result.halt_reason}") # e.g., "halt_opcode", "end_of_program"
+print(f"Halt instruction: {result.halt_metadata.last_instruction}")
+print(f"Memory expansions: {result.memory_expansions}")
+print(f"Peak tape cells: {result.peak_memory_cells}")
+if result.halt_metadata.last_jump_target is not None:
+    print(f"Last jump target: {result.halt_metadata.last_jump_target}")
+if result.halt_metadata.cycle_detected:
+    print("Cycle detected during execution")
 
 # Access machine state (if capture_machine=True)
 if result.machine:
@@ -241,6 +259,7 @@ The interpreter raises specific exceptions for different error conditions:
 | `InputUnderflowError` | `/` instruction with no input buffered | Provide input or avoid `/` instruction |
 | `StepLimitExceededError` | Exceeded `max_steps` limit | Increase limit or check for infinite loop |
 | `MemoryLimitExceededError` | Tape growth disabled or limit reached | Enable expansion or increase limit |
+| `MalbolgeRuntimeError` | Base class for unexpected runtime faults | Inspect message or diagnostics above |
 
 Example error handling:
 ```python
@@ -286,7 +305,25 @@ print(f"Evaluations: {stats['evaluations']}")    # Programs tested
 print(f"Cache hits: {stats['cache_hits']}")      # Reused snapshots
 print(f"Pruned: {stats['pruned']}")              # Dead branches eliminated
 print(f"Duration: {stats['duration_ns']/1e6}ms") # Time taken
+print(f"Repeated state pruned: {stats['repeated_state_pruned']}")
+print(f"Trace length: {stats['trace_length']} (events captured)")
 ```
+
+#### Capture Trace Data for Debugging
+
+Enable tracing to inspect each candidate the generator evaluates:
+
+```python
+config = GenerationConfig(random_seed=42, capture_trace=True)
+result = generator.generate_for_string("Hi", config=config)
+
+print(f"Trace events: {result.stats['trace_length']}")
+print("First event:", result.trace[0])
+```
+
+Each trace entry records the candidate suffix, whether it was pruned, and the
+reason (`prefix_mismatch`, `repeated_state`, `accepted`, etc.), making it easy to
+replay the search.
 
 #### How Generation Works
 
@@ -329,6 +366,8 @@ Test coverage includes:
 - Generator determinism and configuration
 - Encoding/normalization round-trips
 - CLI command parsing
+- Interpreter halt metadata (jump targets, memory diagnostics)
+- Generator heuristics (repeated-state pruning, trace capture)
 
 ### Development Setup
 
@@ -336,15 +375,24 @@ Test coverage includes:
 # Install development dependencies
 python -m pip install -e .
 
-# Install pre-commit hooks (auto-formatting)
+# Install pre-commit hooks (auto-formatting, linting, type checks)
 pre-commit install
 
 # Run code formatter
 black .
 
+# Run linters
+python -m ruff check .
+
+# Run type checker
+python -m mypy malbolge
+
 # Run pre-commit checks manually
 pre-commit run --all-files
 ```
+
+Ruff and mypy respect the settings in `pyproject.toml` and will run automatically
+through the configured pre-commit hooks.
 
 ### Project Structure
 

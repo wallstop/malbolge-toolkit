@@ -9,16 +9,17 @@ Run with:
 from __future__ import annotations
 
 import argparse
-from pprint import pprint
-
 import sys
 from pathlib import Path
+from pprint import pprint
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-
-from malbolge import GenerationConfig, ProgramGenerator, MalbolgeInterpreter
+try:
+    from malbolge import GenerationConfig, MalbolgeInterpreter, ProgramGenerator
+except ImportError:  # pragma: no cover - fallback for direct script invocation
+    REPO_ROOT = Path(__file__).resolve().parents[1]
+    if str(REPO_ROOT) not in sys.path:
+        sys.path.insert(0, str(REPO_ROOT))
+    from malbolge import GenerationConfig, MalbolgeInterpreter, ProgramGenerator
 
 
 def parse_args() -> argparse.Namespace:

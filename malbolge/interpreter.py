@@ -8,8 +8,8 @@ and avoids unnecessary allocations in tight loops.
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
-from typing import Iterable, List, Optional, Sequence
 
 from .encoding import (
     ENCRYPTION_TRANSLATE,
@@ -18,6 +18,8 @@ from .encoding import (
     reverse_normalize,
 )
 from .utils import MAX_ADDRESS_SPACE, crazy_operation, ternary_rotate
+
+CYCLE_DETECTION_LIMIT = 100_000
 
 
 class MalbolgeRuntimeError(RuntimeError):
@@ -42,7 +44,7 @@ class MemoryLimitExceededError(MalbolgeRuntimeError):
 
 @dataclass(slots=True)
 class MalbolgeMachine:
-    tape: List[int] = field(default_factory=list)
+    tape: list[int] = field(default_factory=list)
     a: int = 0
     c: int = 0
     d: int = 0
@@ -60,7 +62,7 @@ class MalbolgeMachine:
             raise MalbolgeRuntimeError("Program exceeds maximum addressable tape size.")
         self.reset()
 
-    def copy(self) -> "MalbolgeMachine":
+    def copy(self) -> MalbolgeMachine:
         return MalbolgeMachine(self.tape.copy(), self.a, self.c, self.d, self.halted)
 
     def encrypt_current_cell(self) -> None:
@@ -70,12 +72,22 @@ class MalbolgeMachine:
 
 
 @dataclass(slots=True)
+class HaltMetadata:
+    last_instruction: str | None = None
+    last_jump_target: int | None = None
+    cycle_detected: bool = False
+
+
+@dataclass(slots=True)
 class ExecutionResult:
     output: str
     halted: bool
     steps: int
     halt_reason: str
-    machine: Optional[MalbolgeMachine] = None
+    machine: MalbolgeMachine | None = None
+    halt_metadata: HaltMetadata = field(default_factory=HaltMetadata)
+    memory_expansions: int = 0
+    peak_memory_cells: int = 0
 
 
 class MalbolgeInterpreter:
@@ -89,7 +101,7 @@ class MalbolgeInterpreter:
         self,
         *,
         allow_memory_expansion: bool = True,
-        memory_limit: Optional[int] = MAX_ADDRESS_SPACE,
+        memory_limit: int | None = MAX_ADDRESS_SPACE,
     ) -> None:
         self.machine = MalbolgeMachine()
         self._allow_memory_expansion = allow_memory_expansion
@@ -97,6 +109,8 @@ class MalbolgeInterpreter:
             memory_limit if memory_limit is not None else MAX_ADDRESS_SPACE
         )
         self._program_length = 0
+        self._memory_expansions = 0
+        self._peak_tape_length = 0
 
     def load_program(self, opcodes: Sequence[str]) -> None:
         if len(opcodes) == 0:
@@ -107,6 +121,11 @@ class MalbolgeInterpreter:
         ascii_tape = reverse_normalize(opcodes)
         self.machine.load_tape(ascii_tape)
         self._program_length = len(opcodes)
+        self._reset_diagnostics()
+
+    def _reset_diagnostics(self) -> None:
+        self._memory_expansions = 0
+        self._peak_tape_length = len(self.machine.tape)
 
     def execute(
         self,
@@ -158,6 +177,7 @@ class MalbolgeInterpreter:
         max_steps: int | None = None,
         capture_machine: bool = False,
     ) -> ExecutionResult:
+        self._reset_diagnostics()
         return self._execute_loaded(
             input_buffer=input_buffer,
             max_steps=max_steps,
@@ -180,6 +200,7 @@ class MalbolgeInterpreter:
             machine.tape.extend(ord(ch) for ch in ascii_suffix)
         self.machine = machine
         self._program_length = prefix_length + len(suffix_opcodes)
+        self._reset_diagnostics()
         return self._execute_loaded(
             input_buffer=input_buffer,
             max_steps=max_steps,
@@ -195,12 +216,14 @@ class MalbolgeInterpreter:
     ) -> ExecutionResult:
         machine = self.machine
         machine.halted = False
-        output_chars: List[str] = []
+        output_chars: list[str] = []
         input_iter = iter(input_buffer or [])
 
         steps_remaining = max_steps
         steps_executed = 0
-        halt_reason: Optional[str] = None
+        halt_reason: str | None = None
+        metadata = HaltMetadata()
+        seen_states: set[tuple[int, int, int, int]] = set()
 
         while not machine.halted:
             if steps_remaining is not None:
@@ -213,11 +236,22 @@ class MalbolgeInterpreter:
                 break
 
             self._ensure_capacity(machine.c)
+            cell_value = machine.tape[machine.c]
+            if len(seen_states) < CYCLE_DETECTION_LIMIT:
+                state_key = (machine.c, cell_value, machine.a, machine.d)
+                if state_key in seen_states:
+                    metadata.cycle_detected = True
+                else:
+                    seen_states.add(state_key)
             instruction = self._instruction_at(machine.c)
+            metadata.last_instruction = instruction
+            metadata.last_jump_target = None
 
             if instruction == "i":
                 self._ensure_capacity(machine.d)
-                machine.c = machine.tape[machine.d]
+                jump_target = machine.tape[machine.d]
+                machine.c = jump_target
+                metadata.last_jump_target = jump_target
             elif instruction == "<":
                 output_chars.append(chr(machine.a % 256))
             elif instruction == "/":
@@ -236,7 +270,9 @@ class MalbolgeInterpreter:
                 machine.tape[machine.d] = machine.a
             elif instruction == "j":
                 self._ensure_capacity(machine.d)
-                machine.d = machine.tape[machine.d]
+                jump_target = machine.tape[machine.d]
+                machine.d = jump_target
+                metadata.last_jump_target = jump_target
             elif instruction == "p":
                 self._ensure_capacity(machine.d)
                 machine.a = crazy_operation(machine.a, machine.tape[machine.d])
@@ -265,11 +301,15 @@ class MalbolgeInterpreter:
             steps=steps_executed,
             halt_reason=halt_reason,
             machine=snapshot,
+            halt_metadata=metadata,
+            memory_expansions=self._memory_expansions,
+            peak_memory_cells=self._peak_tape_length,
         )
 
     def _ensure_capacity(self, index: int) -> None:
         machine = self.machine
-        if index < len(machine.tape):
+        initial_length = len(machine.tape)
+        if index < initial_length:
             return
 
         if not self._allow_memory_expansion:
@@ -297,6 +337,11 @@ class MalbolgeInterpreter:
             raise MemoryLimitExceededError(
                 "Unable to expand memory to requested index."
             )
+        appended = len(machine.tape) - initial_length
+        if appended > 0:
+            self._memory_expansions += appended
+            if len(machine.tape) > self._peak_tape_length:
+                self._peak_tape_length = len(machine.tape)
 
     def _instruction_at(self, index: int) -> str:
         value = self.machine.tape[index]

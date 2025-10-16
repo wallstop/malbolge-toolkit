@@ -66,8 +66,12 @@ python -c "from malbolge import ProgramGenerator; print('Success!')"
 ### Step 4: Install Development Tools (Optional)
 
 ```bash
-# For pre-commit hooks (auto-formatting)
+# For pre-commit hooks (formatting, linting, typing)
 pre-commit install
+
+# Run linting and type checks manually
+python -m ruff check .
+python -m mypy malbolge
 
 # For Jupyter notebooks
 pip install jupyter
@@ -90,7 +94,14 @@ python -m malbolge.cli generate --text "Hi" --seed 42
 ioooooooooooo...***pppopop<v
 bCBA@?>=<;:98...srq)(',%*#G4
 Hi
-{'evaluations': 6776, 'cache_hits': 0, 'pruned': 6755, 'duration_ns': 48074500}
+{
+    'evaluations': 6776,
+    'cache_hits': 0,
+    'pruned': 6755,
+    'repeated_state_pruned': 318,
+    'duration_ns': 48074500,
+    'trace_length': 0
+}
 ```
 
 **What you see:**
@@ -98,6 +109,7 @@ Hi
 2. **Line 2**: ASCII Malbolge source (printable characters)
 3. **Line 3**: Output (what the program prints)
 4. **Line 4**: Statistics (how it was generated)
+5. **Lines 5-8**: Interpreter diagnostics (halt reason, last instruction, memory growth)
 
 ### Run the Program
 
@@ -118,10 +130,18 @@ python -m malbolge.cli run --ascii-file path/to/program.mal
 Hi
 halt_reason=halt_opcode
 steps=120
+halt_instruction=v
+memory_expansions=0
+peak_tape_cells=218
 tape_length=218
 ```
 
 Congratulations! You just generated and executed your first Malbolge program!
+
+The additional diagnostics indicate which opcode halted execution, whether any
+memory expansion occurred, and the peak tape size. These values are mirrored in
+the Python API via `ExecutionResult.halt_metadata`, `memory_expansions`, and
+`peak_memory_cells`.
 
 ---
 
@@ -174,11 +194,13 @@ python -m malbolge.cli generate --text "ABC" --max-depth 3
 
 # Change opcode choices (default is "op*")
 python -m malbolge.cli generate --text "ABC" --opcodes "o*"  # Only use 'o' and '*'
+python -m malbolge.cli generate --text "ABC" --seed 42 --trace  # Emit JSON trace for debugging
 ```
 
 **Parameters explained:**
 - `--max-depth N`: How many levels to explore before randomizing (default: 5)
 - `--opcodes STR`: Which opcodes to try during search (default: "op*")
+- `--trace`: Print a JSON array of trace events (also sets `trace_length`)
 
 ### Saving Output
 
@@ -276,6 +298,8 @@ Register D: 120
 - `evaluations`: How many candidate programs were tested (6,776)
 - `cache_hits`: Reused machine snapshots (0 on first run)
 - `pruned`: Dead branches eliminated (6,755 - that's 99.7%!)
+- `repeated_state_pruned`: Branches skipped due to repeated machine signatures
+- `trace_length`: Number of trace events captured (0 unless tracing is enabled)
 - `duration_ns`: Time taken in nanoseconds (~49ms)
 
 **Execution Stats:**
@@ -307,11 +331,11 @@ python examples/profile_generator.py --text "Hello" --runs 5
 
 **Output:**
 ```
-[run 1] duration=0.087362s evaluations=12453 cache_hits=0 pruned=12412
-[run 2] duration=0.089104s evaluations=12453 cache_hits=0 pruned=12412
-[run 3] duration=0.086891s evaluations=12453 cache_hits=0 pruned=12412
-[run 4] duration=0.088532s evaluations=12453 cache_hits=0 pruned=12412
-[run 5] duration=0.087745s evaluations=12453 cache_hits=0 pruned=12412
+[run 1] duration=0.087362s evaluations=12453 cache_hits=0 pruned=12412 repeated_pruned=412
+[run 2] duration=0.089104s evaluations=12453 cache_hits=0 pruned=12412 repeated_pruned=409
+[run 3] duration=0.086891s evaluations=12453 cache_hits=0 pruned=12412 repeated_pruned=410
+[run 4] duration=0.088532s evaluations=12453 cache_hits=0 pruned=12412 repeated_pruned=408
+[run 5] duration=0.087745s evaluations=12453 cache_hits=0 pruned=12412 repeated_pruned=411
 
 === Summary ===
 Target: 'Hello'
@@ -320,6 +344,7 @@ Duration fastest: 0.086891s  average: 0.087927s
 Evaluations avg: 12453.00
 Cache hits avg: 0.00
 Pruned avg: 12412.00
+Repeated pruned avg: 410.00
 ```
 
 ### Benchmarking Built-in Modules
@@ -566,7 +591,7 @@ python -m malbolge.cli generate --text "Hi" --seed 42
 from malbolge import ProgramGenerator, GenerationConfig
 
 generator = ProgramGenerator()
-config = GenerationConfig(random_seed=42)
+config = GenerationConfig(random_seed=42, capture_trace=True)
 
 result = generator.generate_for_string("A", config=config)
 
@@ -580,6 +605,11 @@ print(f"Total candidates: {total}")
 print(f"Kept: {kept} ({kept/total*100:.1f}%)")
 print(f"Pruned: {pruned} ({pruned/total*100:.1f}%)")
 print(f"Cache hits: {stats['cache_hits']}")
+print(f"Repeated state pruned: {stats['repeated_state_pruned']}")
+print(f"Trace length: {stats['trace_length']}")
+
+if result.trace:
+    print("First trace event:", result.trace[0])
 ```
 
 ### Getting Help
@@ -661,6 +691,19 @@ try:
 except MalbolgeRuntimeError as e:
     print(f"Error: {e}")
 ```
+
+---
+
+## Appendix: Sample Reference Assets
+
+The repository ships with ready-made lookup tables under
+[`examples/samples/`](../examples/samples):
+
+- [ASCII.txt](../examples/samples/ASCII.txt): printable ASCII table covering decimal, hexadecimal, and character representations.
+- [OP_CODES.txt](../examples/samples/OP_CODES.txt): mnemonic cheat sheet for the Malbolge opcodes interpreted by the CLI and Python API.
+
+Use these files when you need quick conversions during manual program tweaks or
+when passing precomputed sequences to the CLI with `--ascii-file`.
 
 ---
 

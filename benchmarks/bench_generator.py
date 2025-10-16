@@ -11,7 +11,6 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 from statistics import mean
-from typing import Dict, List, Tuple
 
 from malbolge import GenerationConfig, ProgramGenerator
 
@@ -26,16 +25,16 @@ class BenchmarkCase:
     )
 
 
-CASES: List[BenchmarkCase] = [
+CASES: list[BenchmarkCase] = [
     BenchmarkCase("short", "Hi"),
     BenchmarkCase("longer", "Hello"),
 ]
 
 
-def time_generation(case: BenchmarkCase) -> Tuple[float, float, Dict[str, int]]:
+def time_generation(case: BenchmarkCase) -> tuple[float, float, dict[str, int]]:
     generator = ProgramGenerator()
-    measurements: List[float] = []
-    stats: Dict[str, int] = {}
+    measurements: list[float] = []
+    stats: dict[str, int] = {}
 
     for _ in range(case.runs):
         start = time.perf_counter()
@@ -54,7 +53,8 @@ def main() -> None:
         fastest, average, stats = time_generation(case)
         stats_summary = ", ".join(f"{key}={value}" for key, value in stats.items())
         print(
-            f"{case.name:20s}  fastest: {fastest:.6f} s  average: {average:.6f} s  [{stats_summary}]"
+            f"{case.name:20s}  fastest: {fastest:.6f} s  average: {average:.6f} s  "
+            f"[{stats_summary}]"
         )
 
 

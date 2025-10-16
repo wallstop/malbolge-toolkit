@@ -7,21 +7,21 @@ New code should prefer importing from the `malbolge` package directly.
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from malbolge.encoding import normalize, reverse_normalize
 from malbolge.generator import GenerationConfig, ProgramGenerator
 from malbolge.interpreter import (
-    InvalidOpcodeError,
     InputUnderflowError,
+    InvalidOpcodeError,
     MalbolgeInterpreter,
     MalbolgeRuntimeError,
     MemoryLimitExceededError,
     StepLimitExceededError,
 )
 from malbolge.utils import (
-    convert_to_base10,
     convert_to_base3,
+    convert_to_base10,
     crazy_operation,
     ternary_rotate,
 )
