@@ -1,0 +1,82 @@
+repos:
+  - repo: https://github.com/executablebooks/mdformat
+    rev: 0.7.17
+    hooks:
+      - id: mdformat
+        additional_dependencies:
+          - mdformat-gfm
+          - mdformat-frontmatter
+        stages:
+          - pre-commit
+          - pre-push
+          - manual
+  - repo: https://github.com/psf/black
+    rev: 24.8.0
+    hooks:
+      - id: black
+        language_version: python3
+        stages:
+          - pre-commit
+          - pre-push
+          - manual
+  - repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: v0.15.0
+    hooks:
+      - id: markdownlint-cli2
+        args:
+          - "--config"
+          - ".markdownlint.yaml"
+        stages:
+          - pre-commit
+          - pre-push
+          - manual
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.4
+    hooks:
+      - id: ruff
+        args:
+          - --fix
+          - --exit-non-zero-on-fix
+        stages:
+          - pre-commit
+          - pre-push
+          - manual
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.11.2
+    hooks:
+      - id: mypy
+  - repo: local
+    hooks:
+      - id: remove-unused-type-ignores
+        name: Remove unused type ignore annotations
+        entry: python scripts/remove_unused_type_ignores.py
+        language: python
+        types:
+          - python
+        additional_dependencies:
+          - mypy==1.11.2
+        stages:
+          - pre-commit
+          - pre-push
+          - manual
+      - id: markdown-link-text
+        name: Ensure Markdown link text is descriptive
+        entry: python scripts/check_markdown_links.py
+        language: python
+        types_or:
+          - markdown
+        stages:
+          - pre-commit
+          - pre-push
+          - manual
+      - id: markdown-link-check
+        name: Verify Markdown links resolve
+        entry: python scripts/check_markdown_urls.py
+        language: python
+        pass_filenames: false
+        additional_dependencies:
+          - linkcheckmd==1.4.0
+        stages:
+          - pre-commit
+          - pre-push
+          - manual
