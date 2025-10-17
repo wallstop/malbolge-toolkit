@@ -4,13 +4,19 @@
 
 ## Prerequisites
 
-Before starting, make sure you understand:
+**What you need to know:**
 
-- Basic command-line navigation
-- Python 3.11+ installed
-- Virtual environments (recommended but optional)
+- How to open a terminal/command prompt on your computer
+- Basic familiarity with typing commands (don't worry - we'll show you exactly what to type!)
+- Python 3.11 or newer installed (check by typing `python --version`)
 
-**New to Malbolge?** Read the [Malbolge Primer](MALBOLGE_PRIMER.md) first to understand what Malbolge is and why we need automated generation!
+**What you DON'T need to know:**
+
+- How to program in Malbolge (nobody does - that's why this tool exists!)
+- Advanced Python programming (the examples are beginner-friendly)
+- Complex computer science concepts (we explain everything)
+
+**New to Malbolge?** Start with the [Malbolge Primer](MALBOLGE_PRIMER.md) first - it explains what Malbolge is and why automated generation is necessary. This tutorial will make much more sense after reading it!
 
 **Migrating from earlier releases?** Imports now flow through the modular `malbolge` package. See the [release notes](RELEASE_NOTES.md) for a quick checklist covering the retirement of `MalbolgeInterpreter.py`, new CLI entry points, and other breaking changes.
 
@@ -111,13 +117,18 @@ Hi
 }
 ```
 
-**What you see:**
+**Understanding what you see:**
 
-1. **Line 1**: Opcodes (the internal representation)
-1. **Line 2**: ASCII Malbolge source (printable characters)
-1. **Line 3**: Output (what the program prints)
-1. **Line 4**: Statistics (how it was generated)
-1. **Lines 5-8**: Interpreter diagnostics (halt reason, last instruction, memory growth)
+1. **Line 1 - Opcodes**: The internal representation (like machine code for Malbolge)
+1. **Line 2 - ASCII**: The actual Malbolge program in printable characters (looks like random symbols - that's normal!)
+1. **Line 3 - Output**: What the program prints when you run it (should be "Hi")
+1. **Line 4 - Statistics**: Performance data about how the program was generated
+   - `evaluations`: How many candidate programs were tested
+   - `cache_hits`: How many times cached results were reused (speeds things up!)
+   - `pruned`: How many bad candidates were eliminated (usually 99%+)
+   - `repeated_state_pruned`: Candidates skipped due to duplicate states
+   - `duration_ns`: How long generation took in nanoseconds (divide by 1,000,000 for milliseconds)
+1. **Lines 5-8**: Interpreter diagnostics showing how the program stopped and memory usage
 
 > Tip: Pass `--log-level INFO` (or DEBUG) to CLI commands to stream diagnostics while troubleshooting.
 
@@ -178,22 +189,25 @@ python -m malbolge.cli generate --text "Hello World"
 
 ### Deterministic Generation (Reproducibility)
 
-Use `--seed` to get the same program every time:
+The `--seed` parameter is like a recipe number - use the same seed to get the exact same program every time:
 
 ```bash
-# Same seed = same program
+# Same seed = identical program every time
 python -m malbolge.cli generate --text "Test" --seed 12345
-python -m malbolge.cli generate --text "Test" --seed 12345  # Identical output
+python -m malbolge.cli generate --text "Test" --seed 12345  # Produces the exact same program
 
-# Different seed = different program (but same output!)
-python -m malbolge.cli generate --text "Test" --seed 99999
+# Different seed = different program (but both print "Test")
+python -m malbolge.cli generate --text "Test" --seed 99999  # Different program, same output
 ```
 
-**Why use seeds?**
+**Why use seeds? (Benefits for everyone)**
 
-- **Reproducible research**: Share seeds with collaborators
-- **Testing**: Verify bug fixes produce identical results
-- **Comparison**: Test different generator optimizations
+- **For Beginners**: Get consistent results when following tutorials or debugging
+- **For Researchers**: Share specific programs with colleagues by sharing the seed
+- **For Testing**: Verify that bug fixes work by comparing outputs before and after
+- **For Comparison**: Test different settings while keeping other variables constant
+
+**Think of it like this:** Without a seed, the generator takes random paths through the search space. With a seed, it takes the same path every time, like following a GPS route.
 
 ### Tuning Search Parameters
 
@@ -325,22 +339,24 @@ Register C: 218
 Register D: 120
 ```
 
-**Understanding the output:**
+**Understanding the output (in plain English):**
 
-**Generation Stats:**
+**Generation Stats** (how the program was created):
 
-- `evaluations`: How many candidate programs were tested (6,776)
-- `cache_hits`: Reused machine snapshots (0 on first run)
-- `pruned`: Dead branches eliminated (6,755 - that's 99.7%!)
-- `repeated_state_pruned`: Branches skipped due to repeated machine signatures
-- `trace_length`: Number of trace events captured (0 unless tracing is enabled)
-- `duration_ns`: Time taken in nanoseconds (~49ms)
+- `evaluations: 6,776` - The generator tested 6,776 different candidate programs
+- `cache_hits: 0` - None were reused from cache (this is the first run, nothing cached yet)
+- `pruned: 6,755` - 6,755 candidates were eliminated as dead ends (99.7% efficiency!)
+- `repeated_state_pruned: 318` - Additional candidates skipped because they led to duplicate states
+- `trace_length: 0` - No trace data captured (would show search details if enabled)
+- `duration_ns: 49,311,500` - Took about 49 milliseconds (divide by 1,000,000 to get ms)
 
-**Execution Stats:**
+**Execution Stats** (what happened when the program ran):
 
-- `steps`: Instructions executed (120)
-- `tape_length`: Memory used (218 cells)
-- `Register A/C/D`: Final register values
+- `steps: 120` - The program executed 120 Malbolge instructions
+- `tape_length: 218` - Used 218 memory cells (out of a possible 59,049)
+- `Register A/C/D` - Final values in Malbolge's three internal registers (mostly useful for debugging)
+
+**The key takeaway:** The generator is very efficient - it tested 6,776 possibilities but eliminated 99.7% of them immediately, finding a working program in under 50 milliseconds!
 
 ### Customizing Analysis
 
