@@ -1,3 +1,36 @@
+[build-system]
+requires = ["setuptools>=67", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "malbolge-generator"
+version = "0.1.0"
+description = "Automated Malbolge program generator and interpreter"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [{name = "Wallstop"}]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/wallstop/MalbolgeGenerator"
+Documentation = "https://github.com/wallstop/MalbolgeGenerator"
+Issues = "https://github.com/wallstop/MalbolgeGenerator/issues"
+
+[tool.setuptools]
+include-package-data = false
+py-modules = ["MalbolgeInterpreter"]
+
+[tool.setuptools.packages.find]
+include = ["malbolge", "malbolge.*"]
+exclude = ["notebooks", "notebooks.*"]
+
 [tool.black]
 line-length = 88
 target-version = ["py311"]
