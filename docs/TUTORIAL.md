@@ -5,48 +5,52 @@
 ## Prerequisites
 
 Before starting, make sure you understand:
+
 - Basic command-line navigation
 - Python 3.11+ installed
 - Virtual environments (recommended but optional)
 
-**New to Malbolge?** Read [MALBOLGE_PRIMER.md](MALBOLGE_PRIMER.md) first to understand what Malbolge is and why we need automated generation!
+**New to Malbolge?** Read the [Malbolge Primer](MALBOLGE_PRIMER.md) first to understand what Malbolge is and why we need automated generation!
 
-**Migrating from earlier releases?** Imports now flow through the modular `malbolge` package. See [RELEASE_NOTES.md](RELEASE_NOTES.md) for a quick checklist covering the retirement of `MalbolgeInterpreter.py`, new CLI entry points, and other breaking changes.
+**Migrating from earlier releases?** Imports now flow through the modular `malbolge` package. See the [release notes](RELEASE_NOTES.md) for a quick checklist covering the retirement of `MalbolgeInterpreter.py`, new CLI entry points, and other breaking changes.
 
----
+______________________________________________________________________
 
 ## Table of Contents
 
 1. [Environment Setup](#1-environment-setup)
-2. [Quick CLI Walkthrough](#2-quick-cli-walkthrough)
-3. [Generating Programs](#3-generating-programs)
-4. [Running Programs](#4-running-programs)
-5. [Analyzing Generated Programs](#5-analyzing-generated-programs)
-6. [Performance Profiling](#6-performance-profiling)
-7. [Python API Usage](#7-python-api-usage)
-8. [Advanced Techniques](#8-advanced-techniques)
-9. [Troubleshooting](#9-troubleshooting)
+1. [Quick CLI Walkthrough](#2-quick-cli-walkthrough)
+1. [Generating Programs](#3-generating-programs)
+1. [Running Programs](#4-running-programs)
+1. [Analyzing Generated Programs](#5-analyzing-generated-programs)
+1. [Performance Profiling](#6-performance-profiling)
+1. [Python API Usage](#7-python-api-usage)
+1. [Advanced Techniques](#8-advanced-techniques)
+1. [Troubleshooting](#9-troubleshooting)
 
----
+______________________________________________________________________
 
 ## 1. Environment Setup
 
 ### Step 1: Clone and Navigate
 
 ```bash
-git clone https://github.com/yourusername/MalbolgeGenerator.git
+# Clone the repository (use your fork instead of wallstop if applicable)
+git clone https://github.com/wallstop/MalbolgeGenerator.git
 cd MalbolgeGenerator
 ```
 
 ### Step 2: Create Virtual Environment
 
 **Windows (PowerShell):**
+
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
 **macOS/Linux:**
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate
@@ -79,7 +83,7 @@ python -m mypy malbolge
 pip install jupyter
 ```
 
----
+______________________________________________________________________
 
 ## 2. Quick CLI Walkthrough
 
@@ -92,6 +96,7 @@ python -m malbolge.cli generate --text "Hi" --seed 42
 ```
 
 **Output:**
+
 ```
 ioooooooooooo...***pppopop<v
 bCBA@?>=<;:98...srq)(',%*#G4
@@ -107,14 +112,15 @@ Hi
 ```
 
 **What you see:**
-1. **Line 1**: Opcodes (the internal representation)
-2. **Line 2**: ASCII Malbolge source (printable characters)
-3. **Line 3**: Output (what the program prints)
-4. **Line 4**: Statistics (how it was generated)
-5. **Lines 5-8**: Interpreter diagnostics (halt reason, last instruction, memory growth)
 
+1. **Line 1**: Opcodes (the internal representation)
+1. **Line 2**: ASCII Malbolge source (printable characters)
+1. **Line 3**: Output (what the program prints)
+1. **Line 4**: Statistics (how it was generated)
+1. **Lines 5-8**: Interpreter diagnostics (halt reason, last instruction, memory growth)
 
 > Tip: Pass `--log-level INFO` (or DEBUG) to CLI commands to stream diagnostics while troubleshooting.
+
 ### Run the Program
 
 Copy the opcodes from line 1 and run:
@@ -130,6 +136,7 @@ python -m malbolge.cli run --ascii-file path/to/program.mal
 ```
 
 **Output:**
+
 ```
 Hi
 halt_reason=halt_opcode
@@ -152,7 +159,7 @@ the Python API via `ExecutionResult.halt_metadata`, `memory_expansions`, and
 reports the number of steps between repeated states, and `cycle_tracking_limited` shows when cycle
 detection sampling reached its limit (tune via `MalbolgeInterpreter(..., cycle_detection_limit=...)`).
 
----
+______________________________________________________________________
 
 ## 3. Generating Programs
 
@@ -183,6 +190,7 @@ python -m malbolge.cli generate --text "Test" --seed 99999
 ```
 
 **Why use seeds?**
+
 - **Reproducible research**: Share seeds with collaborators
 - **Testing**: Verify bug fixes produce identical results
 - **Comparison**: Test different generator optimizations
@@ -207,8 +215,9 @@ python -m malbolge.cli generate --text "ABC" --seed 42 --trace  # Emit JSON trac
 ```
 
 **Parameters explained:**
+
 - `--max-depth N`: How many levels to explore before randomizing (default: 5)
-- `--opcodes STR`: Which opcodes to try during search (default: "op*")
+- `--opcodes STR`: Which opcodes to try during search (default: "op\*")
 - `--trace`: Print a JSON array of trace events (also sets `trace_length`) and a summary of reasons.
 
 ### Saving Output
@@ -221,7 +230,7 @@ python -m malbolge.cli generate --text "Hello" --seed 42 > hello.txt
 python -m malbolge.cli generate --text "Hello" --seed 42 | tee hello.txt
 ```
 
----
+______________________________________________________________________
 
 ## 4. Running Programs
 
@@ -250,6 +259,7 @@ python -m malbolge.cli run --ascii "(=<\`#9]~6ZY32Vx/4Rs+0No-&Jk)\"Fh}|Bcy?\`=*z
 ```
 
 **Output:**
+
 ```
 Hello World!
 halt_reason=end_of_program
@@ -265,6 +275,7 @@ The cycle tracking fields indicate whether the interpreter detected a loop or hi
 ### Run from File
 
 **PowerShell:**
+
 ```powershell
 # Extract opcodes from generation output (first line)
 $opcodes = (Get-Content hello.txt | Select-Object -First 1)
@@ -272,13 +283,14 @@ python -m malbolge.cli run --opcodes "$opcodes"
 ```
 
 **Unix:**
+
 ```bash
 # Extract opcodes (first line of file)
 opcodes=$(head -n 1 hello.txt)
 python -m malbolge.cli run --opcodes "$opcodes"
 ```
 
----
+______________________________________________________________________
 
 ## 5. Analyzing Generated Programs
 
@@ -291,6 +303,7 @@ python examples/analyze_program.py --text "Hi" --seed 42
 ```
 
 **Output:**
+
 ```
 === Generation ===
 Target: Hi
@@ -315,6 +328,7 @@ Register D: 120
 **Understanding the output:**
 
 **Generation Stats:**
+
 - `evaluations`: How many candidate programs were tested (6,776)
 - `cache_hits`: Reused machine snapshots (0 on first run)
 - `pruned`: Dead branches eliminated (6,755 - that's 99.7%!)
@@ -323,6 +337,7 @@ Register D: 120
 - `duration_ns`: Time taken in nanoseconds (~49ms)
 
 **Execution Stats:**
+
 - `steps`: Instructions executed (120)
 - `tape_length`: Memory used (218 cells)
 - `Register A/C/D`: Final register values
@@ -337,7 +352,7 @@ python examples/analyze_program.py --text "Hello World" --seed 100
 python examples/analyze_program.py --text "Test" --max-depth 10 --opcodes "op"
 ```
 
----
+______________________________________________________________________
 
 ## 6. Performance Profiling
 
@@ -350,6 +365,7 @@ python examples/profile_generator.py --text "Hello" --runs 5
 ```
 
 **Output:**
+
 ```
 [run 1] duration=0.087362s evaluations=12453 cache_hits=0 pruned=12412 repeated_pruned=412
 [run 2] duration=0.089104s evaluations=12453 cache_hits=0 pruned=12412 repeated_pruned=409
@@ -385,7 +401,7 @@ python -m malbolge.cli bench --module all
 Snapshot interpreter and generator telemetry for regression tracking:
 
 ```bash
-python benchmarks/capture_baseline.py --output benchmarks/baseline.json
+python -m benchmarks.capture_baseline --output benchmarks/baseline.json
 ```
 
 The JSON output records cycle detection metadata, memory growth, and generator
@@ -394,16 +410,16 @@ heuristic ratios so you can diff performance over time.
 Compare a fresh run against the baseline with:
 
 ```bash
-python benchmarks/compare_baseline.py --candidate benchmarks/latest.json --allow-regression 10
+python -m benchmarks.compare_baseline --candidate benchmarks/latest.json --allow-regression 10
 
-python benchmarks/summarize_baseline.py --baseline benchmarks/baseline.json
+python -m benchmarks.summarize_baseline --baseline benchmarks/baseline.json
 
-python benchmarks/cycle_repeat_report.py --baseline benchmarks/baseline.json
+python -m benchmarks.cycle_repeat_report --baseline benchmarks/baseline.json
 ```
 
-The comparison script prints per-case deltas for fastest/average timings and exits with an error when slowdowns exceed the permitted percentage so regressions stand out immediately. The summariser produces a concise text snapshot for dashboards or review notes, the cycle report visualises repeat-length distributions captured during interpreter runs, and the Markdown renderer bundles everything together. Continuous integration uploads the JSON, summary, histogram, and Markdown report so you can inspect performance from any successful build. Interpreter benchmarks include a synthetic `loop_small` case that forces a repeat length of 2 so histogram trends remain easy to spot.
+The comparison script prints per-case deltas for fastest/average timings and exits with an error when slowdowns exceed the permitted percentage so regressions stand out immediately. The summariser produces a concise text snapshot for dashboards or review notes, the cycle report visualises repeat-length distributions captured during interpreter runs, and the Markdown renderer bundles everything together. Continuous integration uploads the JSON, summary, histogram, and Markdown report so you can inspect performance from any successful build. Interpreter benchmarks include synthetic `loop_small` (repeat length 2) and `loop_limited` (tracking limit reached) cases so histogram trends remain easy to spot.
 
----
+______________________________________________________________________
 
 ## 7. Python API Usage
 
@@ -522,7 +538,7 @@ assert exec_result.halted, "Program didn't halt!"
 print("✓ Program verified successfully!")
 ```
 
----
+______________________________________________________________________
 
 ## 8. Advanced Techniques
 
@@ -596,22 +612,22 @@ for opcodes, desc in configs:
           f"{result.stats['evaluations']} evaluations")
 ```
 
----
+______________________________________________________________________
 
 ## 9. Troubleshooting
 
 ### Common Issues and Solutions
 
-| Symptom | Likely Cause | Solution |
-|---------|--------------|----------|
-| `No module named 'malbolge'` | Package not installed | Run `python -m pip install -e .` |
-| `'malbolge.cli' is a package and cannot be directly executed` | Missing `__main__.py` | Use `python -m malbolge.cli.main` or check repo for updates |
-| `[error] Encountered invalid opcode` | Invalid ASCII source | Use `--opcodes` instead of `--ascii`, or verify source |
-| `[error] Input instruction encountered with empty buffer` | Program uses `/` (input) | Generated programs shouldn't need input; check source |
-| `Halt reason: memory_limit_exceeded` | Memory expansion disabled | Not typically an issue with generated programs; check interpreter config |
-| `Generation very slow` | Complex target or deep search | Use smaller `--max-depth`, try different `--seed` |
-| `Different output each run` | No seed specified | Add `--seed` parameter for deterministic results |
-| `Black formatting failures` | Code not formatted (dev only) | Run `black .` or `pre-commit run --all-files` |
+| Symptom                                                       | Likely Cause                  | Solution                                                                 |
+| ------------------------------------------------------------- | ----------------------------- | ------------------------------------------------------------------------ |
+| `No module named 'malbolge'`                                  | Package not installed         | Run `python -m pip install -e .`                                         |
+| `'malbolge.cli' is a package and cannot be directly executed` | Missing `__main__.py`         | Use `python -m malbolge.cli.main` or check repo for updates              |
+| `[error] Encountered invalid opcode`                          | Invalid ASCII source          | Use `--opcodes` instead of `--ascii`, or verify source                   |
+| `[error] Input instruction encountered with empty buffer`     | Program uses `/` (input)      | Generated programs shouldn't need input; check source                    |
+| `Halt reason: memory_limit_exceeded`                          | Memory expansion disabled     | Not typically an issue with generated programs; check interpreter config |
+| `Generation very slow`                                        | Complex target or deep search | Use smaller `--max-depth`, try different `--seed`                        |
+| `Different output each run`                                   | No seed specified             | Add `--seed` parameter for deterministic results                         |
+| `Black formatting failures`                                   | Code not formatted (dev only) | Run `black .` or `pre-commit run --all-files`                            |
 
 ### Debugging Generation Issues
 
@@ -658,34 +674,37 @@ if result.trace:
 ### Getting Help
 
 1. **Check documentation**:
-   - [MALBOLGE_PRIMER.md](MALBOLGE_PRIMER.md) - Language basics
+
+   - [Malbolge Primer](MALBOLGE_PRIMER.md) - Language basics
    - [README.md](../README.md) - API reference
    - [AGENTS.md](../AGENTS.md) - Development guidelines
 
-2. **Run examples**:
+1. **Run examples**:
+
    ```bash
    python examples/analyze_program.py --text "Test"
    python examples/profile_generator.py --text "Test" --runs 3
    ```
 
-3. **Test installation**:
+1. **Test installation**:
+
    ```bash
    python -m unittest discover -v
    ```
 
-4. **Check GitHub Issues**: [github.com/yourusername/MalbolgeGenerator/issues](https://github.com/yourusername/MalbolgeGenerator/issues)
+1. **Check GitHub Issues**: [GitHub Issues](https://github.com/wallstop/MalbolgeGenerator/issues)
 
----
+______________________________________________________________________
 
 ## Next Steps
 
 1. **Experiment**: Try generating programs for different strings
-2. **Analyze**: Use `examples/analyze_program.py` to understand execution
-3. **Profile**: Measure performance with `examples/profile_generator.py`
-4. **Explore**: Open `notebooks/Malbolge_Advanced_Tour.ipynb` for interactive learning
-5. **Learn**: Read [MALBOLGE_PRIMER.md](MALBOLGE_PRIMER.md) for deep understanding
+1. **Analyze**: Use `examples/analyze_program.py` to understand execution
+1. **Profile**: Measure performance with `examples/profile_generator.py`
+1. **Explore**: Open `notebooks/Malbolge_Advanced_Tour.ipynb` for interactive learning
+1. **Learn**: Read the [Malbolge Primer](MALBOLGE_PRIMER.md) for deep understanding
 
----
+______________________________________________________________________
 
 ## Quick Reference
 
@@ -735,20 +754,29 @@ except MalbolgeRuntimeError as e:
     print(f"Error: {e}")
 ```
 
----
+______________________________________________________________________
 
-## Appendix: Sample Reference Assets
+## Appendix: Sample Malbolge Programs
 
-The repository ships with ready-made lookup tables under
+The repository ships with ready-made sample programs under
 [`examples/samples/`](../examples/samples):
 
-- [ASCII.txt](../examples/samples/ASCII.txt): printable ASCII table covering decimal, hexadecimal, and character representations.
-- [OP_CODES.txt](../examples/samples/OP_CODES.txt): mnemonic cheat sheet for the Malbolge opcodes interpreted by the CLI and Python API.
+- [PROGRAM_ASCII.txt](../examples/samples/PROGRAM_ASCII.txt): A generated Malbolge program that prints "Hello", as its raw ASCII source.
+- [PROGRAM_OP_CODES.txt](../examples/samples/PROGRAM_OP_CODES.txt): A generated Malbolge program that prints "Hello", as the Malbolge's interpreter's op codes.
 
-Use these files when you need quick conversions during manual program tweaks or
-when passing precomputed sequences to the CLI with `--ascii-file`.
+Use these files as test programs when experimenting with the interpreter via `--ascii-file`:
 
----
+```bash
+python -m malbolge.cli run --ascii-file examples/samples/PROGRAM_ASCII.txt
+```
+
+or
+
+```bash
+python -m malbolge.cli run --opcodes-file examples/samples/PROGRAM_OP_CODES.txt
+```
+
+______________________________________________________________________
 
 **Happy Malbolge programming!** Remember: if you can generate it, you've accomplished what most humans can't do by hand! 🎉
 
@@ -759,7 +787,6 @@ Trace summaries help identify why candidates are pruned. Generate a summary with
 ```bash
 python examples/trace_summary.py --text "Hi" --seed 42 --limit 5
 ```
-
 
 The script prints aggregated reason counts and the first N events so you can compare heuristics across seeds or configuration tweaks.
 

@@ -30,11 +30,11 @@ stubborn targets or analyzing search heuristics.
 
 ## samples/
 
-Static reference data lives under [`examples/samples/`](./samples). It currently
+Sample Malbolge programs live under [`examples/samples/`](./samples). It currently
 contains:
 
-- [`ASCII.txt`](./samples/ASCII.txt) — printable ASCII table for quickly mapping characters to numeric codes.
-- [`OP_CODES.txt`](./samples/OP_CODES.txt) — opcode cheat sheet that pairs well with the interpreter analyzer scripts.
+- [PROGRAM_ASCII.txt](./samples/PROGRAM_ASCII.txt): A generated Malbolge program that prints "Hello", as its raw ASCII source.
+- [PROGRAM_OP_CODES.txt](./samples/PROGRAM_OP_CODES.txt): A generated Malbolge program that prints "Hello", as the Malbolge's interpreter's op codes.
 
 Feel free to add more scripts here as new features land. Keep example outputs deterministic by seeding through `GenerationConfig(random_seed=...)`.
 

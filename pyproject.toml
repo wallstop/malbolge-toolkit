@@ -42,3 +42,7 @@ strict_equality = true
 show_error_codes = true
 pretty = true
 plugins = []
+
+[[tool.mypy.overrides]]
+module = ["linkcheckmd", "linkcheckmd.*"]
+ignore_missing_imports = true

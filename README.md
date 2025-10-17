@@ -7,6 +7,7 @@
 MalbolgeGenerator is a high-performance Python toolkit that solves an impossible problem: **writing programs in Malbolge**, a programming language so complex that the first "Hello World" program took 2 years and required AI search algorithms to discover.
 
 This project provides:
+
 - **Automatic Program Generation**: Give it text like "Hello", get a working Malbolge program
 - **High-Performance Interpreter**: Execute Malbolge programs with full debugging capabilities
 - **Clean Python API**: Use it as a library or via command-line tools
@@ -14,9 +15,22 @@ This project provides:
 
 **New to Malbolge?** Start with our [Malbolge Primer](docs/MALBOLGE_PRIMER.md) to understand what Malbolge is and why this project exists!
 
+## What You'll Learn
+
+By using this project, you'll gain hands-on experience with:
+
+- **Automated Code Generation**: See how AI search algorithms can write code that humans can't
+- **Constraint Solving**: Understanding breadth-first search, branch pruning, and state caching
+- **Esoteric Computing**: Explore ternary arithmetic and non-binary computing models
+- **Language Design**: Appreciate what makes a language "hard" and how complexity emerges
+- **Performance Optimization**: Learn about caching strategies and search space reduction
+
+This isn't just about Malbolge - it's about algorithm design, optimization, and computational thinking!
+
 ## What is Malbolge?
 
 Malbolge (named after the 8th circle of Hell) is an esoteric programming language designed in 1998 to be **as difficult as possible** to program in. It features:
+
 - Self-modifying code that encrypts itself after each instruction
 - Base-3 (ternary) arithmetic instead of binary
 - Only 8 valid instructions with counter-intuitive behavior
@@ -39,8 +53,8 @@ This project ships as a modular Python package (`malbolge`) with:
 ### Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/MalbolgeGenerator.git
+# Clone the repository (use your fork instead of wallstop if applicable)
+git clone https://github.com/wallstop/MalbolgeGenerator.git
 cd MalbolgeGenerator
 
 # Create a virtual environment (recommended)
@@ -65,6 +79,7 @@ python -m malbolge.cli generate --text "Hello" --seed 42
 ```
 
 Output:
+
 ```
 Opcodes: ioooooo...p<v
 ASCII: (scrambled characters)
@@ -80,11 +95,18 @@ Stats: {
 ```
 
 Run it:
+
 ```bash
 python -m malbolge.cli run --opcodes "ioooooo...p<v"
 ```
 
 That's it! You just generated and ran a Malbolge program. No human could write this by hand!
+
+**Quick Test**: Verify your installation works:
+
+```bash
+python -c "from malbolge import ProgramGenerator, MalbolgeInterpreter; print('Installation successful!')"
+```
 
 ### Using the Python API
 
@@ -130,8 +152,8 @@ python -m malbolge.cli generate --text "ABC" --max-depth 10 --opcodes "op*"
 python -m malbolge.cli generate --text "ABC" --seed 42 --trace
 ```
 
-
 Tip: use `--log-level INFO` or `--log-level DEBUG` with any CLI command to see structured log output.
+
 ### 2. Run Programs
 
 ```bash
@@ -150,7 +172,7 @@ python -m malbolge.cli run --opcodes "ioooooo...p<v" --no-cycle-detection
 
 Each run prints `cycle_detected=`, `cycle_repeat_length=`, and `cycle_tracking_limited=` so you can tell whether loops were detected, how long the repeat was, and whether the configured limit truncated tracking.
 
-> Interpreter benchmarks now include a synthetic `loop_small` case that forces a cycle (repeat length 2) so telemetry remains easy to validate.
+> Interpreter benchmarks now include synthetic `loop_small` (forces repeat length 2) and `loop_limited` (hits the tracking-limit path) cases so telemetry remains easy to validate.
 
 ### 3. Benchmark Performance
 
@@ -165,19 +187,19 @@ python -m malbolge.cli bench --module generator
 python -m malbolge.cli bench --module all
 
 # Capture baseline metrics (JSON)
-python benchmarks/capture_baseline.py --output benchmarks/baseline.json
+python -m benchmarks.capture_baseline --output benchmarks/baseline.json
 
 # Compare a fresh run against the saved baseline
-python benchmarks/compare_baseline.py --candidate benchmarks/latest.json --allow-regression 10
+python -m benchmarks.compare_baseline --candidate benchmarks/latest.json --allow-regression 10
 
 # Summarise the committed baseline for dashboards or quick checks
-python benchmarks/summarize_baseline.py --baseline benchmarks/baseline.json
+python -m benchmarks.summarize_baseline --baseline benchmarks/baseline.json
 
 # Render cycle repeat-length histograms from interpreter baselines
-python benchmarks/cycle_repeat_report.py --baseline benchmarks/baseline.json
+python -m benchmarks.cycle_repeat_report --baseline benchmarks/baseline.json
 
 # Generate CI-friendly markdown summary with histogram blocks
-python benchmarks/render_benchmark_reports.py --baseline benchmarks/baseline.json --output benchmarks/benchmark_report.md
+python -m benchmarks.render_benchmark_reports --baseline benchmarks/baseline.json --output benchmarks/benchmark_report.md
 ```
 
 The comparison script prints per-case deltas for fastest and average timings, failing the run when slowdowns exceed the allowed percentage so regressions surface quickly. The summariser produces a concise text snapshot you can drop into dashboards or share in review threads, the cycle report highlights repeat-length distributions, and the Markdown renderer rolls everything into a single artifact. CI publishes `latest.json`, the text summary, the histogram report, and the Markdown bundle for every push.
@@ -187,13 +209,15 @@ The comparison script prints per-case deltas for fastest and average timings, fa
 ### Beginner Resources
 
 1. **[Malbolge Primer](docs/MALBOLGE_PRIMER.md)** - Start here! Comprehensive guide covering:
+
    - What Malbolge is and why it's impossible to program by hand
    - The 8 instructions and how they work
    - Ternary arithmetic and the "crazy operation"
    - Working examples with explanations
    - Links to external resources and papers
 
-2. **[Tutorial](docs/TUTORIAL.md)** - End-to-end CLI workflows:
+1. **[Tutorial](docs/TUTORIAL.md)** - End-to-end CLI workflows:
+
    - Environment setup
    - Command-line usage patterns
    - Troubleshooting common issues
@@ -204,20 +228,26 @@ The comparison script prints per-case deltas for fastest and average timings, fa
 The `examples/` directory contains working code you can run immediately:
 
 #### Analyze Generated Programs
+
 ```bash
 python examples/analyze_program.py --text "Hi" --seed 42
 ```
+
 Generates a program and shows detailed statistics:
+
 - Target string and actual output
 - Opcode sequence
 - Execution steps and register states
 - Memory tape length
 
 #### Profile Generator Performance
+
 ```bash
 python examples/profile_generator.py --text "Hello" --runs 5
 ```
+
 Runs multiple generation cycles and reports:
+
 - Average evaluation count
 - Cache hit rates
 - Branch pruning efficiency (including repeated-state prunes)
@@ -233,6 +263,7 @@ jupyter notebook notebooks/Malbolge_Advanced_Tour.ipynb
 ```
 
 The notebook includes:
+
 - Step-by-step program generation
 - Visual execution tracing
 - Heuristic comparison experiments
@@ -284,15 +315,16 @@ if result.machine:
 
 The interpreter raises specific exceptions for different error conditions:
 
-| Exception | Cause | Fix |
-|-----------|-------|-----|
-| `InvalidOpcodeError` | Opcode not in Malbolge instruction table | Verify program source is valid |
-| `InputUnderflowError` | `/` instruction with no input buffered | Provide input or avoid `/` instruction |
-| `StepLimitExceededError` | Exceeded `max_steps` limit | Increase limit or check for infinite loop |
-| `MemoryLimitExceededError` | Tape growth disabled or limit reached | Enable expansion or increase limit |
-| `MalbolgeRuntimeError` | Base class for unexpected runtime faults | Inspect message or diagnostics above |
+| Exception                  | Cause                                    | Fix                                       |
+| -------------------------- | ---------------------------------------- | ----------------------------------------- |
+| `InvalidOpcodeError`       | Opcode not in Malbolge instruction table | Verify program source is valid            |
+| `InputUnderflowError`      | `/` instruction with no input buffered   | Provide input or avoid `/` instruction    |
+| `StepLimitExceededError`   | Exceeded `max_steps` limit               | Increase limit or check for infinite loop |
+| `MemoryLimitExceededError` | Tape growth disabled or limit reached    | Enable expansion or increase limit        |
+| `MalbolgeRuntimeError`     | Base class for unexpected runtime faults | Inspect message or diagnostics above      |
 
 Example error handling:
+
 ```python
 from malbolge import MalbolgeInterpreter, MalbolgeRuntimeError
 
@@ -365,12 +397,13 @@ replay the search.
 The generator uses advanced optimization techniques:
 
 1. **Breadth-First Search**: Explores program space systematically
-2. **Snapshot Caching**: Reuses interpreter states (avoids re-execution)
-3. **Dead Branch Pruning**: Eliminates paths with wrong output immediately
-4. **Deterministic Search**: Same seed always produces same program
-5. **Depth-Limited Randomization**: Prevents infinite search
+1. **Snapshot Caching**: Reuses interpreter states (avoids re-execution)
+1. **Dead Branch Pruning**: Eliminates paths with wrong output immediately
+1. **Deterministic Search**: Same seed always produces same program
+1. **Depth-Limited Randomization**: Prevents infinite search
 
 **Performance Example** (generating "Hi"):
+
 ```
 Evaluations: 6,776 candidates tested
 Cache hits: 0 (first run, nothing cached)
@@ -397,6 +430,7 @@ python -m unittest tests.test_encoding -v
 ```
 
 Test coverage includes:
+
 - Interpreter execution and error handling
 - Generator determinism and configuration
 - Encoding/normalization round-trips
@@ -410,7 +444,7 @@ Test coverage includes:
 Capture and persist performance telemetry for regression checks:
 
 ```bash
-python benchmarks/capture_baseline.py --output benchmarks/baseline.json
+python -m benchmarks.capture_baseline --output benchmarks/baseline.json
 ```
 
 The resulting JSON summarises interpreter cycle/memory metadata and generator
@@ -512,13 +546,14 @@ The real algorithm includes caching, depth limits, and statistical tracking.
 ## Contributing
 
 Contributions are welcome! Whether you're:
+
 - Improving documentation
 - Adding test coverage
 - Optimizing the generator
 - Creating new examples
 - Fixing bugs
 
-Please see [AGENTS.md](AGENTS.md) for coding standards and [PLAN.md](PLAN.md) for the development roadmap.
+Please see the [Agent directory](AGENTS.md) for coding standards and the [project roadmap](PLAN.md) for upcoming milestones.
 
 ## License
 
@@ -536,15 +571,18 @@ Copyright (c) Eli Pinkerton
 ## External Resources
 
 ### Malbolge References
+
 - [Malbolge on Esolang Wiki](https://esolangs.org/wiki/Malbolge) - Comprehensive reference
-- [Programming in Malbolge by Lou Scheffer](http://www.lscheffer.com/malbolge.shtml) - Technical deep dive
+- [Programming in Malbolge by Lou Scheffer](http://www.lscheffer.com/malbolge.shtml) - Technical deep dive (Note: SSL certificate may be expired, but content is accessible)
 - [LMAO Assembler](https://github.com/esoteric-programmer/LMAO) - HeLL to Malbolge compiler
 - [Try It Online](https://tio.run/#malbolge) - Run Malbolge in your browser
 
 ### Academic Papers
+
 - [Introduction to Esoteric Language Malbolge](https://www.trs.cm.is.nagoya-u.ac.jp/projects/Malbolge/papers/JVSE2010-Malbolge.pdf) - Masahiko Sakai (2010)
 
 ### Tutorials
+
 - [Matthias Ernst's Malbolge Tutorial](http://www.matthias-ernst.eu/malbolge/tutorial/01/learning-malbolge.html)
 - [Lutter.cc Malbolge Cat Program Tutorial](https://lutter.cc/malbolge/tutorial/cat.html)
 
@@ -557,17 +595,61 @@ If you use this project in academic work, please cite:
   author = {Pinkerton, Eli},
   title = {MalbolgeGenerator: Automated Malbolge Program Synthesis},
   year = {2024},
-  url = {https://github.com/yourusername/MalbolgeGenerator}
+  url = {https://github.com/wallstop/MalbolgeGenerator}
 }
 ```
 
+## Common Issues for Beginners
+
+### Installation Problems
+
+**Issue**: `No module named 'malbolge'`
+
+```bash
+# Solution: Install the package in editable mode
+python -m pip install -e .
+```
+
+**Issue**: `python command not found`
+
+```bash
+# Solution: Use python3 on macOS/Linux
+python3 -m pip install -e .
+```
+
+### Running Commands
+
+**Issue**: Benchmark scripts fail with `ModuleNotFoundError: No module named 'benchmarks'`
+
+```bash
+# Solution: Run as a module with -m flag
+python -m benchmarks.capture_baseline --output benchmarks/baseline.json
+```
+
+**Issue**: Generation is very slow
+
+```bash
+# Solution: Try a different seed or reduce search depth
+python -m malbolge.cli generate --text "Test" --seed 999
+python -m malbolge.cli generate --text "Test" --max-depth 3
+```
+
+### Getting Help
+
+Not sure where to start? Follow this path:
+
+1. **Installation Check**: Run `python -c "from malbolge import ProgramGenerator; print('Success!')"`
+1. **First Program**: `python -m malbolge.cli generate --text "Hi" --seed 42`
+1. **Learn Basics**: Read the [Malbolge Primer](docs/MALBOLGE_PRIMER.md)
+1. **Tutorial**: Follow the [Hands-on Tutorial](docs/TUTORIAL.md)
+1. **Examples**: Try scripts in `examples/`
+
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/MalbolgeGenerator/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/MalbolgeGenerator/discussions)
-- **Documentation**: Start with [docs/MALBOLGE_PRIMER.md](docs/MALBOLGE_PRIMER.md)
+- **Issues**: [GitHub Issues](https://github.com/wallstop/MalbolgeGenerator/issues)
+- **Documentation**: Start with the [Malbolge Primer](docs/MALBOLGE_PRIMER.md)
 
----
+______________________________________________________________________
 
 **Ready to explore the most difficult programming language ever created?** Start with the [Malbolge Primer](docs/MALBOLGE_PRIMER.md) and then try generating your first program!
 
@@ -578,7 +660,6 @@ Inspect pruning reasons quickly using:
 ```bash
 python examples/trace_summary.py --text "Hi" --seed 42 --limit 5
 ```
-
 
 This prints combined stats, a reason histogram, and the first N trace events for deeper analysis or regression comparisons.
 

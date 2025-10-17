@@ -4,8 +4,8 @@
       "case": "noop",
       "opcodes_length": 1,
       "runs": 5,
-      "fastest_us": 1.500127837061882,
-      "average_us": 5.479948595166206,
+      "fastest_us": 2.400018274784088,
+      "average_us": 5.399947986006737,
       "metadata": {
         "cycle_detected": false,
         "cycle_tracking_limited": false,
@@ -19,8 +19,8 @@
       "case": "generated_hi",
       "opcodes_length": 205,
       "runs": 5,
-      "fastest_us": 82.5999304652214,
-      "average_us": 91.29992686212063,
+      "fastest_us": 103.99986058473587,
+      "average_us": 110.2999784052372,
       "metadata": {
         "cycle_detected": false,
         "cycle_tracking_limited": false,
@@ -34,8 +34,8 @@
       "case": "loop_small",
       "opcodes_length": 0,
       "runs": 5,
-      "fastest_us": 1.500127837061882,
-      "average_us": 2.8400681912899017,
+      "fastest_us": 1.8998980522155762,
+      "average_us": 3.359932452440262,
       "metadata": {
         "cycle_detected": true,
         "cycle_tracking_limited": false,
@@ -49,8 +49,8 @@
       "case": "loop_limited",
       "opcodes_length": 0,
       "runs": 5,
-      "fastest_us": 1.200009137392044,
-      "average_us": 1.4999881386756897,
+      "fastest_us": 1.6998965293169022,
+      "average_us": 2.079969272017479,
       "metadata": {
         "cycle_detected": false,
         "cycle_tracking_limited": true,
@@ -71,14 +71,14 @@
         "max_search_depth": 5,
         "opcode_choices": "op*"
       },
-      "fastest_s": 0.05207259999588132,
-      "average_s": 0.0541037666456153,
+      "fastest_s": 0.06689940020442009,
+      "average_s": 0.0705235000544538,
       "stats": {
         "evaluations": 5883,
         "cache_hits": 0,
         "pruned": 5864,
         "repeated_state_pruned": 0,
-        "duration_ns": 48682700,
+        "duration_ns": 63665900,
         "trace_length": 0,
         "pruned_ratio": 0.9967703552609213,
         "repeated_state_ratio": 0.0
@@ -93,14 +93,14 @@
         "max_search_depth": 5,
         "opcode_choices": "op*"
       },
-      "fastest_s": 0.04647970013320446,
-      "average_s": 0.046857933358599745,
+      "fastest_s": 0.05907640000805259,
+      "average_s": 0.06403576660280426,
       "stats": {
         "evaluations": 5235,
         "cache_hits": 0,
         "pruned": 5215,
         "repeated_state_pruned": 0,
-        "duration_ns": 43078000,
+        "duration_ns": 67913000,
         "trace_length": 0,
         "pruned_ratio": 0.9961795606494747,
         "repeated_state_ratio": 0.0

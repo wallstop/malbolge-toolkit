@@ -11,7 +11,7 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
-from .cycle_repeat_report import render_cycle_table, render_histogram
+from .cycle_repeat_report import _extract_lengths, render_cycle_table, render_histogram
 from .summarize_baseline import _load, _summarise_generator, _summarise_interpreter
 
 
@@ -76,13 +76,11 @@ def main() -> None:
 
 
 def _extract_lengths_counter(entries: Iterable[dict[str, Any]]) -> Counter[int]:
-    lengths: list[int] = []
-    for entry in entries:
-        metadata = entry.get("metadata", {})
-        length = metadata.get("cycle_repeat_length")
-        if isinstance(length, int):
-            lengths.append(length)
-    return Counter(lengths)
+    if isinstance(entries, list):
+        materialized = entries
+    else:
+        materialized = list(entries)
+    return Counter(_extract_lengths(materialized))
 
 
 if __name__ == "__main__":
