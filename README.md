@@ -523,24 +523,22 @@ MalbolgeGenerator/
 
 ### Architecture Overview
 
-```
-User Request: "Generate program for 'Hello'"
-        ↓
-┌─────────────────────────────────────────┐
-│ ProgramGenerator                        │
-│ - Breadth-first search                  │
-│ - Branch pruning                        │
-│ - State caching                         │
-└─────────────────┬───────────────────────┘
-                  ↓
-        ┌─────────────────────┐
-        │ MalbolgeInterpreter  │
-        │ - Execute opcodes    │
-        │ - Track state        │
-        │ - Return snapshots   │
-        └─────────────────────┘
-                  ↓
-        Generated Program: "iooo*p<...v"
+```mermaid
+flowchart TD
+    A["User Request: 'Generate program for Hello'"]
+    B["ProgramGenerator
+    - Breadth-first search
+    - Branch pruning
+    - State caching"]
+    C["MalbolgeInterpreter
+    - Execute opcodes
+    - Track state
+    - Return snapshots"]
+    D["Generated Program: iooo*p<...v"]
+
+    A --> B
+    B --> C
+    C --> D
 ```
 
 ### Generation Algorithm (Simplified for Understanding)
