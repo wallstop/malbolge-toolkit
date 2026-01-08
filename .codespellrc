@@ -1,0 +1,4 @@
+[codespell]
+ignore-words = .codespell-ignorewords.txt
+skip = .git,.venv,*/.venv/*,*/.mypy_cache/*,*/.ruff_cache/*,*/.pytest_cache/*,*/.idea/*,*.lock,*.ipynb,*.svg,*.png,*.jpg,*.jpeg,*.gif,*.pdf
+check-filenames = true
