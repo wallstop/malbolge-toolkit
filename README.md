@@ -3,14 +3,14 @@
 **Automatically generate and execute programs in Malbolge, the most difficult esoteric programming language ever created.**
 
 ## 📌 Table of Contents
-1. [Introduction](#introduction)
-2. [Features](#features)
-3. [Installation](#installation)
-4. [Usage](#usage)
-5. [Examples](#examples)
-6. [Contributing](#contributing)
-7. [License](#license)
 
+1. [Introduction](#what-is-this)
+1. [Features](#features)
+1. [Quick Start](#quick-start)
+1. [Usage](#command-line-interface-cli)
+1. [Examples](#examples-and-learning-resources)
+1. [Contributing](#contributing)
+1. [License](#license)
 
 ## What is This?
 
@@ -55,22 +55,14 @@ Malbolge (named after the 8th circle of Hell in Dante's Inferno) is an esoteric 
 This project ships as a modular Python package (`malbolge`) with:
 
 - **`ProgramGenerator`**: Deterministic, cache-aware synthesis engine with repeated-state pruning and optional trace capture for any target string
+
 - **`MalbolgeInterpreter`**: High-performance execution engine with configurable memory limits and structured results
+
 - **Utility Modules**: Encoding/decoding, base-3 arithmetic, and crazy-operation simulation
+
 - **CLI Tools**: Command-line interface for generation, execution, and benchmarking
+
 - **Examples & Notebooks**: Working code examples and interactive Jupyter tutorials
-
-- ## 📌 Contributing
-
-Thank you for creating this cool project!  
-If you’d like to contribute, you could start with:
-- Improving documentation
-- Fixing typos
-- Adding examples
-- Updating the Table of Contents
-
-We recommend reviewing existing files before submitting a PR.
-
 
 ## Quick Start
 
@@ -592,7 +584,7 @@ Contributions are welcome! Whether you're:
 - Creating new examples
 - Fixing bugs
 
-Please see the [Agent directory](AGENTS.md) for coding standards and the [project roadmap](PLAN.md) for upcoming milestones.
+See our [Contributor Guidelines](AGENTS.md) for development setup, coding standards, and PR guidelines.
 
 ## License
 
