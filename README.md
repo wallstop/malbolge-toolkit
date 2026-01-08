@@ -1,4 +1,4 @@
-﻿# MalbolgeGenerator
+# MalbolgeGenerator
 
 **Automatically generate and execute programs in Malbolge, the most difficult esoteric programming language ever created.**
 
@@ -209,6 +209,10 @@ python -m malbolge.cli bench --module generator
 # Benchmark everything
 python -m malbolge.cli bench --module all
 
+# Run benchmark modules directly (useful for development)
+python -m benchmarks.bench_interpreter   # Runs interpreter micro-benchmarks
+python -m benchmarks.bench_generator     # Runs generator micro-benchmarks
+
 # Capture baseline metrics (JSON)
 python -m benchmarks.capture_baseline --output benchmarks/baseline.json
 
@@ -225,7 +229,7 @@ python -m benchmarks.cycle_repeat_report --baseline benchmarks/baseline.json
 python -m benchmarks.render_benchmark_reports --baseline benchmarks/baseline.json --output benchmarks/benchmark_report.md
 ```
 
-The comparison script prints per-case deltas for fastest and average timings, failing the run when slowdowns exceed the allowed percentage so regressions surface quickly. The summariser produces a concise text snapshot you can drop into dashboards or share in review threads, the cycle report highlights repeat-length distributions, and the Markdown renderer rolls everything into a single artifact. CI publishes `latest.json`, the text summary, the histogram report, and the Markdown bundle for every push.
+The direct benchmark modules (`bench_interpreter`, `bench_generator`) print timing results and telemetry for each test case, making them ideal for quick profiling during development. The comparison script prints per-case deltas for fastest and average timings, failing the run when slowdowns exceed the allowed percentage so regressions surface quickly. The summariser produces a concise text snapshot you can drop into dashboards or share in review threads, the cycle report highlights repeat-length distributions, and the Markdown renderer rolls everything into a single artifact. CI publishes `latest.json`, the text summary, the histogram report, and the Markdown bundle for every push.
 
 ## Examples and Learning Resources
 
@@ -292,6 +296,26 @@ The notebook includes:
 - Heuristic comparison experiments
 - Register and memory inspection
 
+### Trace Summaries
+
+Inspect pruning reasons quickly using:
+
+```bash
+python examples/trace_summary.py --text "Hi" --seed 42 --limit 5
+```
+
+This prints combined stats, a reason histogram, and the first N trace events for deeper analysis or regression comparisons.
+
+Need a richer view? Turn the trace into depth/ reason histograms:
+
+```bash
+python examples/trace_viz.py --path traces/hello-trace.json
+# or stream directly from the generator
+python -m malbolge.cli generate --text "Hi" --seed 42 --trace | python examples/trace_viz.py --stdin
+```
+
+The visualiser renders per-depth bars, reason counts, and the first few retained candidates so you can spot heuristic bottlenecks at a glance.
+
 ## API Documentation
 
 ### Running Malbolge Programs
@@ -305,17 +329,17 @@ from malbolge import MalbolgeInterpreter
 interpreter = MalbolgeInterpreter(
     allow_memory_expansion=True,  # Allow tape to grow
     memory_limit=59049,            # Max cells (3^10)
-    max_steps=100000               # Prevent infinite loops
+    cycle_detection_limit=100000   # States to track for cycle detection
 )
 
-# Execute opcodes
-result = interpreter.execute("iooo*p<v", capture_machine=True)
+# Execute opcodes (max_steps is a parameter of execute(), not the constructor)
+result = interpreter.execute("iooo*p<v", capture_machine=True, max_steps=100000)
 
 # Inspect results
 print(f"Output: {result.output}")           # Text output
 print(f"Halted: {result.halted}")           # True if program finished
 print(f"Steps: {result.steps}")             # Instructions executed
-print(f"Halt reason: {result.halt_reason}") # e.g., "halt_opcode", "end_of_program"
+print(f"Halt reason: {result.halt_reason}") # e.g., "halt_opcode", "program_end"
 print(f"Halt instruction: {result.halt_metadata.last_instruction}")
 print(f"Cycle repeat length: {result.halt_metadata.cycle_repeat_length}")
 print(f"Cycle tracking limited: {result.halt_metadata.cycle_tracking_limited}")
@@ -397,6 +421,9 @@ print(f"Repeated state pruned: {stats['repeated_state_pruned']}")
 print(f"Pruned ratio: {stats['pruned_ratio']:.3f}")
 print(f"Repeated state ratio: {stats['repeated_state_ratio']:.3f}")
 print(f"Trace length: {stats['trace_length']} (events captured)")
+
+# Note: repeated_state_pruned counts both exact repeated states and signature
+# collisions that are discarded during canonicalisation.
 ```
 
 #### Capture Trace Data for Debugging
@@ -681,23 +708,3 @@ Not sure where to start? Follow this path:
 ______________________________________________________________________
 
 **Ready to explore the most difficult programming language ever created?** Start with the [Malbolge Primer](docs/MALBOLGE_PRIMER.md) and then try generating your first program!
-
-### Trace Summaries
-
-Inspect pruning reasons quickly using:
-
-```bash
-python examples/trace_summary.py --text "Hi" --seed 42 --limit 5
-```
-
-This prints combined stats, a reason histogram, and the first N trace events for deeper analysis or regression comparisons.
-
-Need a richer view? Turn the trace into depth/ reason histograms:
-
-```bash
-python examples/trace_viz.py --path traces/hello-trace.json
-# or stream directly from the generator
-python -m malbolge.cli generate --text "Hi" --seed 42 --trace | python examples/trace_viz.py --stdin
-```
-
-The visualiser renders per-depth bars, reason counts, and the first few retained candidates so you can spot heuristic bottlenecks at a glance.

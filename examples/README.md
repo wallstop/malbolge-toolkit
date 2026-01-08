@@ -1,10 +1,26 @@
-﻿# Examples
+# Examples
 
 **Welcome!** This directory contains ready-to-run example scripts that show you how to use MalbolgeGenerator. Each script demonstrates a specific feature or workflow, with clear output so you can see what's happening.
 
-**Complete Beginner?** Start with `analyze_program.py` - it's the simplest and shows you the basics of generating and running Malbolge programs.
+**Complete Beginner?** Start with `simple_hello.py` - it's the simplest and shows you the basic workflow of generating and running a Malbolge program.
 
 All examples use the modular `malbolge` package and work right out of the box after installation.
+
+## simple_hello.py
+
+**What it does:** The simplest possible example - generates a Malbolge program that prints "Hello" and runs it.
+
+**Perfect for:** Absolute beginners wanting to see the basic workflow in action.
+
+```bash
+python examples/simple_hello.py
+```
+
+**Output includes:**
+
+- Step-by-step generation and execution
+- Basic statistics (duration, evaluations, pruning)
+- Verification that the output matches "Hello"
 
 ## analyze_program.py
 
@@ -82,6 +98,26 @@ python examples/trace_summary.py --text "Hi" --seed 42 --limit 5
 - Count of each pruning reason (prefix mismatch, repeated state, etc.)
 - The first N trace events for detailed inspection
 - Useful for understanding search behavior across different configurations
+
+## trace_analyzer.py
+
+**What it does:** Parses and analyzes trace output from the CLI `--trace` flag, recomputing reason summaries and displaying individual events.
+
+**Perfect for:** Post-hoc analysis of trace files saved from CLI runs.
+
+```bash
+# First, save trace output to a file:
+python -m malbolge.cli generate --text "Hi" --trace > trace.txt
+
+# Then analyze it:
+python examples/trace_analyzer.py --input trace.txt --top 10
+```
+
+**Output includes:**
+
+- Reason summary from CLI output
+- Recomputed reason counts
+- First N trace events with depth, pruned status, and candidate info
 
 ## trace_viz.py
 

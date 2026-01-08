@@ -1,4 +1,4 @@
-﻿# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: MIT
 """
 Analyze Malbolge generator trace output captured from the CLI.
 

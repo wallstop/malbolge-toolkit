@@ -1,4 +1,4 @@
-﻿# Malbolge CLI & Toolkit Tutorial
+# Malbolge CLI & Toolkit Tutorial
 
 **Complete guide to using MalbolgeGenerator for program synthesis and execution**
 
@@ -107,14 +107,7 @@ python -m malbolge.cli generate --text "Hi" --seed 42
 ioooooooooooo...***pppopop<v
 bCBA@?>=<;:98...srq)(',%*#G4
 Hi
-{
-    'evaluations': 6776,
-    'cache_hits': 0,
-    'pruned': 6755,
-    'repeated_state_pruned': 318,
-    'duration_ns': 48074500,
-    'trace_length': 0
-}
+{'evaluations': 6776, 'cache_hits': 0, 'pruned': 6755, 'repeated_state_pruned': 318, 'duration_ns': 48074500, 'trace_length': 0, 'pruned_ratio': 0.997..., 'repeated_state_ratio': 0.047...}
 ```
 
 **Understanding what you see:**
@@ -126,9 +119,8 @@ Hi
    - `evaluations`: How many candidate programs were tested
    - `cache_hits`: How many times cached results were reused (speeds things up!)
    - `pruned`: How many bad candidates were eliminated (usually 99%+)
-   - `repeated_state_pruned`: Candidates skipped due to duplicate states
+   - `repeated_state_pruned`: Candidates skipped due to duplicate states or signature collisions
    - `duration_ns`: How long generation took in nanoseconds (divide by 1,000,000 for milliseconds)
-1. **Lines 5-8**: Interpreter diagnostics showing how the program stopped and memory usage
 
 > Tip: Pass `--log-level INFO` (or DEBUG) to CLI commands to stream diagnostics while troubleshooting.
 
@@ -154,8 +146,8 @@ halt_reason=halt_opcode
 steps=120
 halt_instruction=v
 cycle_detected=False
-cycle_repeat_length=None
 cycle_tracking_limited=False
+cycle_repeat_length=None
 memory_expansions=0
 peak_tape_cells=218
 tape_length=218
@@ -276,11 +268,13 @@ python -m malbolge.cli run --ascii "(=<\`#9]~6ZY32Vx/4Rs+0No-&Jk)\"Fh}|Bcy?\`=*z
 
 ```
 Hello World!
-halt_reason=end_of_program
+halt_reason=program_end
 steps=104572
 cycle_detected=False
-cycle_repeat_length=None
 cycle_tracking_limited=False
+cycle_repeat_length=None
+memory_expansions=0
+peak_tape_cells=59049
 tape_length=59049
 ```
 
@@ -327,7 +321,11 @@ Stats:
 {'cache_hits': 0,
  'duration_ns': 49311500,
  'evaluations': 6776,
- 'pruned': 6755}
+ 'pruned': 6755,
+ 'pruned_ratio': 0.997...,
+ 'repeated_state_pruned': 318,
+ 'repeated_state_ratio': 0.047...,
+ 'trace_length': 0}
 
 === Execution ===
 Stdout: Hi
@@ -346,7 +344,7 @@ Register D: 120
 - `evaluations: 6,776` - The generator tested 6,776 different candidate programs
 - `cache_hits: 0` - None were reused from cache (this is the first run, nothing cached yet)
 - `pruned: 6,755` - 6,755 candidates were eliminated as dead ends (99.7% efficiency!)
-- `repeated_state_pruned: 318` - Additional candidates skipped because they led to duplicate states
+- `repeated_state_pruned: 318` - Candidates skipped because they led to duplicate or signature-collision states
 - `trace_length: 0` - No trace data captured (would show search details if enabled)
 - `duration_ns: 49,311,500` - Took about 49 milliseconds (divide by 1,000,000 to get ms)
 
@@ -489,11 +487,11 @@ from malbolge import MalbolgeInterpreter
 interpreter = MalbolgeInterpreter(
     allow_memory_expansion=True,
     memory_limit=59049,
-    max_steps=1000000
+    cycle_detection_limit=100000  # States to track for cycle detection
 )
 
-# Execute program
-result = interpreter.execute("v", capture_machine=True)
+# Execute program (use max_steps to prevent infinite loops)
+result = interpreter.execute("v", capture_machine=True, max_steps=1000000)
 
 # Check results
 if result.halted:
@@ -513,13 +511,15 @@ from malbolge import (
     MalbolgeInterpreter,
     MalbolgeRuntimeError,
     InvalidOpcodeError,
-    StepLimitExceededError
+    StepLimitExceededError,
+    InputUnderflowError,
+    MemoryLimitExceededError
 )
 
-interpreter = MalbolgeInterpreter(max_steps=100)
+interpreter = MalbolgeInterpreter()
 
 try:
-    result = interpreter.execute("ooooooooo...")  # Very long program
+    result = interpreter.execute("ooooooooo...", max_steps=100)  # Limit execution
 except StepLimitExceededError:
     print("Program took too many steps (possible infinite loop)")
 except InvalidOpcodeError as e:
@@ -551,7 +551,7 @@ exec_result = interpreter.execute(gen_result.opcodes)
 assert exec_result.output == "Hi", "Output mismatch!"
 assert exec_result.halted, "Program didn't halt!"
 
-print("✓ Program verified successfully!")
+print("Program verified successfully!")
 ```
 
 ______________________________________________________________________
@@ -599,10 +599,14 @@ interpreter = MalbolgeInterpreter()
 result1 = interpreter.execute("iooo*p", capture_machine=True)
 snapshot = result1.machine
 
-# Continue from snapshot
+# Continue from snapshot (appends suffix opcodes to tape)
 result2 = interpreter.execute_from_snapshot(snapshot, "o*<v")
 
-print(f"Combined output: {result2.output}")
+# Combine outputs manually if needed
+combined_output = result1.output + result2.output
+print(f"First output: {result1.output}")
+print(f"Second output: {result2.output}")
+print(f"Combined: {combined_output}")
 ```
 
 ### Custom Opcode Exploration
@@ -794,9 +798,7 @@ python -m malbolge.cli run --opcodes-file examples/samples/PROGRAM_OP_CODES.txt
 
 ______________________________________________________________________
 
-**Happy Malbolge programming!** Remember: if you can generate it, you've accomplished what most humans can't do by hand! 🎉
-
-### Visualising Trace Summaries
+## Visualising Trace Summaries
 
 Trace summaries help identify why candidates are pruned. Generate a summary with:
 
@@ -815,3 +817,7 @@ python -m malbolge.cli generate --text "Hi" --seed 42 --trace | python examples/
 ```
 
 The visualiser highlights depth hotspots, reason frequencies, and the first few surviving candidates to guide further heuristic tuning.
+
+______________________________________________________________________
+
+**Happy Malbolge programming!** Remember: if you can generate it, you've accomplished what most humans can't do by hand!

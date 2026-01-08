@@ -128,16 +128,16 @@ ______________________________________________________________________
 
 Malbolge has only **8 valid instructions**. When you calculate `(C + memory[C]) mod 94`, the result maps to one of these operations:
 
-| Opcode | Name      | Effect                                    | Description                                                     |
-| ------ | --------- | ----------------------------------------- | --------------------------------------------------------------- |
-| **j**  | Jump      | `C = memory[D]`                           | Set code pointer to value at data pointer (indirect jump)       |
-| **i**  | Indirect  | `D = memory[D]`                           | Set data pointer to value at data pointer (indirect addressing) |
-| **\*** | Rotate    | `A = memory[D] = rotate_right(memory[D])` | Rotate memory cell right in ternary, store in A                 |
-| **p**  | Operation | `A = memory[D] = crazy(A, memory[D])`     | Apply "crazy operation" (ternary logic gate)                    |
-| **\<** | Output    | `print(A mod 256)`                        | Output accumulator as ASCII character                           |
-| **/**  | Input     | `A = read_char()`                         | Read one character from input into A                            |
-| **o**  | No-op     | *continue*                                | Do nothing (except increment C and D)                           |
-| **v**  | Halt      | *stop*                                    | End program execution                                           |
+| Opcode | Name      | Effect                                   | Description                                                     |
+| ------ | --------- | ---------------------------------------- | --------------------------------------------------------------- |
+| **i**  | Jump      | `C = memory[D]`                          | Set code pointer to value at data pointer (indirect jump)       |
+| **j**  | Indirect  | `D = memory[D]`                          | Set data pointer to value at data pointer (indirect addressing) |
+| **\*** | Rotate    | `A = memory[D] = rotate_left(memory[D])` | Rotate memory cell left in ternary, store in A                  |
+| **p**  | Operation | `A = memory[D] = crazy(A, memory[D])`    | Apply "crazy operation" (ternary logic gate)                    |
+| **\<** | Output    | `print(A mod 256)`                       | Output accumulator as ASCII character                           |
+| **/**  | Input     | `A = read_char()`                        | Read one character from input into A                            |
+| **o**  | No-op     | *continue*                               | Do nothing (except increment C and D)                           |
+| **v**  | Halt      | *stop*                                   | End program execution                                           |
 
 ### The "Crazy Operation"
 
@@ -165,7 +165,7 @@ Ternary: 0000000000 to 2222222222 (base-3)
 
 ### Ternary Rotation
 
-When you execute the `*` instruction, the memory cell rotates **right** in ternary:
+When you execute the `*` instruction, the memory cell rotates **left** in ternary:
 
 ```
 Example:
@@ -182,6 +182,8 @@ After executing an instruction at address C, the cell is encrypted:
 ```python
 encrypted = ENCRYPTION_TABLE[(original + position) mod 94]
 ```
+
+**Note:** Encryption only applies to values in the range 33-126 (printable ASCII characters). Values outside this range are not encrypted.
 
 This prevents simple loops and forces creative programming techniques.
 
@@ -329,7 +331,7 @@ Test Malbolge programs online:
 
 ### Tutorials and Documentation
 
-- [Malbolge Tutorial by Matthias Ernst](http://www.matthias-ernst.eu/malbolge/tutorial/01/learning-malbolge.html) - Step-by-step cat program guide
+- [Malbolge Tutorial by Matthias Ernst](https://lutter.cc/malbolge/tutorial/cat.html) - Step-by-step cat program guide
 - [Lou Scheffer's Programming in Malbolge](http://www.lscheffer.com/malbolge.shtml) - Deep technical analysis (Note: SSL certificate may be expired)
 - [Esolang Wiki: Malbolge](https://esolangs.org/wiki/Malbolge) - Comprehensive reference
 
