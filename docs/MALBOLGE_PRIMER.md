@@ -182,7 +182,7 @@ This operation is reversible, which is crucial for generating programs.
 After executing an instruction at address C, the cell is encrypted:
 
 ```python
-encrypted = ENCRYPTION_TABLE[(original + position) mod 94]
+encrypted = ENCRYPTION_TABLE[(original + position) % 94]
 ```
 
 **Note:** Encryption only applies to values in the range 33-126 (printable ASCII characters). Values outside this range are not encrypted.

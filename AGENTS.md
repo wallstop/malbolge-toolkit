@@ -89,7 +89,10 @@
 MAX_SEARCH_DEPTH = 5
 DEFAULT_OPCODES = "op*"
 
-def generate_for_string(target: str, config: GenerationConfig | None = None) -> GenerationResult:
+
+def generate_for_string(
+    target: str, config: GenerationConfig | None = None
+) -> GenerationResult:
     """
     Generate a Malbolge program that prints the target string.
 
@@ -141,6 +144,7 @@ def test_valid_program_executes(self):
     result = interpreter.execute("v")  # Simple halt
     self.assertTrue(result.halted)
     self.assertEqual(result.halt_reason, "halt_opcode")
+
 
 # Failure case
 def test_invalid_opcode_raises_error(self):

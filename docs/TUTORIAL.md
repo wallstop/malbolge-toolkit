@@ -463,10 +463,10 @@ generator = ProgramGenerator()
 
 # Create configuration
 config = GenerationConfig(
-    random_seed=42,              # Deterministic results
-    max_search_depth=5,          # Depth before randomization
-    opcode_choices="op*",        # Opcodes to try
-    max_program_length=59049     # Safety limit
+    random_seed=42,  # Deterministic results
+    max_search_depth=5,  # Depth before randomization
+    opcode_choices="op*",  # Opcodes to try
+    max_program_length=59049,  # Safety limit
 )
 
 # Generate with config
@@ -474,7 +474,7 @@ result = generator.generate_for_string("Test", config=config)
 
 # Analyze performance
 stats = result.stats
-efficiency = (stats['pruned'] / stats['evaluations'] * 100)
+efficiency = stats["pruned"] / stats["evaluations"] * 100
 print(f"Pruning efficiency: {efficiency:.1f}%")
 ```
 
@@ -487,7 +487,7 @@ from malbolge import MalbolgeInterpreter
 interpreter = MalbolgeInterpreter(
     allow_memory_expansion=True,
     memory_limit=59049,
-    cycle_detection_limit=100000  # States to track for cycle detection
+    cycle_detection_limit=100000,  # States to track for cycle detection
 )
 
 # Execute program (use max_steps to prevent infinite loops)
@@ -513,7 +513,7 @@ from malbolge import (
     InvalidOpcodeError,
     StepLimitExceededError,
     InputUnderflowError,
-    MemoryLimitExceededError
+    MemoryLimitExceededError,
 )
 
 interpreter = MalbolgeInterpreter()
@@ -572,20 +572,24 @@ results = []
 for seed in range(10):
     config = GenerationConfig(random_seed=seed)
     result = generator.generate_for_string(target, config=config)
-    results.append({
-        'seed': seed,
-        'length': len(result.opcodes),
-        'evaluations': result.stats['evaluations'],
-        'duration': result.stats['duration_ns']
-    })
+    results.append(
+        {
+            "seed": seed,
+            "length": len(result.opcodes),
+            "evaluations": result.stats["evaluations"],
+            "duration": result.stats["duration_ns"],
+        }
+    )
 
 # Find shortest program
-shortest = min(results, key=lambda r: r['length'])
+shortest = min(results, key=lambda r: r["length"])
 print(f"Shortest program: seed={shortest['seed']}, length={shortest['length']}")
 
 # Find fastest generation
-fastest = min(results, key=lambda r: r['duration'])
-print(f"Fastest generation: seed={fastest['seed']}, time={fastest['duration']/1e6:.2f}ms")
+fastest = min(results, key=lambda r: r["duration"])
+print(
+    f"Fastest generation: seed={fastest['seed']}, time={fastest['duration']/1e6:.2f}ms"
+)
 ```
 
 ### Resuming from Snapshots
@@ -628,8 +632,10 @@ for opcodes, desc in configs:
     config = GenerationConfig(opcode_choices=opcodes, random_seed=42)
     result = generator.generate_for_string("A", config=config)
 
-    print(f"{desc}: {len(result.opcodes)} opcodes, "
-          f"{result.stats['evaluations']} evaluations")
+    print(
+        f"{desc}: {len(result.opcodes)} opcodes, "
+        f"{result.stats['evaluations']} evaluations"
+    )
 ```
 
 ______________________________________________________________________
@@ -676,8 +682,8 @@ result = generator.generate_for_string("A", config=config)
 
 # Analyze search efficiency
 stats = result.stats
-total = stats['evaluations']
-pruned = stats['pruned']
+total = stats["evaluations"]
+pruned = stats["pruned"]
 kept = total - pruned
 
 print(f"Total candidates: {total}")
@@ -757,17 +763,20 @@ python -m malbolge.cli bench --module all
 ```python
 # Generation
 from malbolge import ProgramGenerator, GenerationConfig
+
 generator = ProgramGenerator()
 config = GenerationConfig(random_seed=42)
 result = generator.generate_for_string("Text", config=config)
 
 # Execution
 from malbolge import MalbolgeInterpreter
+
 interpreter = MalbolgeInterpreter()
 result = interpreter.execute("opcodes", capture_machine=True)
 
 # Error handling
 from malbolge import MalbolgeRuntimeError
+
 try:
     result = interpreter.execute("opcodes")
 except MalbolgeRuntimeError as e:

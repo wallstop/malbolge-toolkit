@@ -19,6 +19,21 @@ repos:
           - pre-commit
           - pre-push
           - manual
+  - repo: https://github.com/adamchainz/blacken-docs
+    rev: 1.16.0
+    hooks:
+      - id: blacken-docs
+        additional_dependencies:
+          - black==24.8.0
+        args:
+          - --line-length=88
+        types_or:
+          - markdown
+          - rst
+        stages:
+          - pre-commit
+          - pre-push
+          - manual
   - repo: https://github.com/codespell-project/codespell
     rev: v2.4.1
     hooks:
