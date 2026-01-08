@@ -42,6 +42,7 @@ jobs:
       - name: Run formatting tooling
         run: |
           pre-commit run black --all-files --show-diff-on-failure
+          pre-commit run blacken-docs --all-files --show-diff-on-failure
           pre-commit run ruff --all-files --show-diff-on-failure
           pre-commit run codespell --all-files --show-diff-on-failure
           pre-commit run remove-unused-type-ignores --all-files --show-diff-on-failure

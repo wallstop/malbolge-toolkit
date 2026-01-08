@@ -328,18 +328,18 @@ from malbolge import MalbolgeInterpreter
 # Create interpreter with memory limits
 interpreter = MalbolgeInterpreter(
     allow_memory_expansion=True,  # Allow tape to grow
-    memory_limit=59049,            # Max cells (3^10)
-    cycle_detection_limit=100000   # States to track for cycle detection
+    memory_limit=59049,  # Max cells (3^10)
+    cycle_detection_limit=100000,  # States to track for cycle detection
 )
 
 # Execute opcodes (max_steps is a parameter of execute(), not the constructor)
 result = interpreter.execute("iooo*p<v", capture_machine=True, max_steps=100000)
 
 # Inspect results
-print(f"Output: {result.output}")           # Text output
-print(f"Halted: {result.halted}")           # True if program finished
-print(f"Steps: {result.steps}")             # Instructions executed
-print(f"Halt reason: {result.halt_reason}") # e.g., "halt_opcode", "program_end"
+print(f"Output: {result.output}")  # Text output
+print(f"Halted: {result.halted}")  # True if program finished
+print(f"Steps: {result.steps}")  # Instructions executed
+print(f"Halt reason: {result.halt_reason}")  # e.g., "halt_opcode", "program_end"
 print(f"Halt instruction: {result.halt_metadata.last_instruction}")
 print(f"Cycle repeat length: {result.halt_metadata.cycle_repeat_length}")
 print(f"Cycle tracking limited: {result.halt_metadata.cycle_tracking_limited}")
@@ -398,25 +398,25 @@ result = generator.generate_for_string("Hello")
 
 # Or customize the search algorithm
 config = GenerationConfig(
-    random_seed=42,          # For reproducible results
-    max_search_depth=5,      # Depth before randomization
-    opcode_choices="op*",    # Which opcodes to try
-    max_program_length=59049 # Safety limit
+    random_seed=42,  # For reproducible results
+    max_search_depth=5,  # Depth before randomization
+    opcode_choices="op*",  # Which opcodes to try
+    max_program_length=59049,  # Safety limit
 )
 result = generator.generate_for_string("Hello", config=config)
 
 # Inspect the results
-print(f"Opcodes: {result.opcodes}")              # Raw opcode string (ends with 'v')
-print(f"ASCII: {result.malbolge_program}")       # Printable Malbolge source
-print(f"Output: {result.machine_output}")        # What it actually prints
-print(f"Target: {result.target}")                # What you requested
+print(f"Opcodes: {result.opcodes}")  # Raw opcode string (ends with 'v')
+print(f"ASCII: {result.malbolge_program}")  # Printable Malbolge source
+print(f"Output: {result.machine_output}")  # What it actually prints
+print(f"Target: {result.target}")  # What you requested
 
 # Analyze performance
 stats = result.stats
-print(f"Evaluations: {stats['evaluations']}")    # Programs tested
-print(f"Cache hits: {stats['cache_hits']}")      # Reused snapshots
-print(f"Pruned: {stats['pruned']}")              # Dead branches eliminated
-print(f"Duration: {stats['duration_ns']/1e6}ms") # Time taken
+print(f"Evaluations: {stats['evaluations']}")  # Programs tested
+print(f"Cache hits: {stats['cache_hits']}")  # Reused snapshots
+print(f"Pruned: {stats['pruned']}")  # Dead branches eliminated
+print(f"Duration: {stats['duration_ns']/1e6}ms")  # Time taken
 print(f"Repeated state pruned: {stats['repeated_state_pruned']}")
 print(f"Pruned ratio: {stats['pruned_ratio']:.3f}")
 print(f"Repeated state ratio: {stats['repeated_state_ratio']:.3f}")
@@ -587,7 +587,7 @@ def generate(target):
             output = execute(test_program)
 
             # Keep programs that produce the right output so far
-            if output.startswith(target[:len(char)]):
+            if output.startswith(target[: len(char)]):
                 candidates.append((suffix, output))
             # If output doesn't match, discard this path (pruning!)
 
