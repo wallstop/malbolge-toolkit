@@ -43,6 +43,7 @@ jobs:
         run: |
           pre-commit run black --all-files --show-diff-on-failure
           pre-commit run ruff --all-files --show-diff-on-failure
+          pre-commit run codespell --all-files --show-diff-on-failure
           pre-commit run remove-unused-type-ignores --all-files --show-diff-on-failure
           pre-commit run mdformat --all-files --show-diff-on-failure
           pre-commit run markdownlint-cli2 --all-files

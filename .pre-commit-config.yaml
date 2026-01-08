@@ -19,6 +19,17 @@ repos:
           - pre-commit
           - pre-push
           - manual
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.4.1
+    hooks:
+      - id: codespell
+        args:
+          - --config
+          - .codespellrc
+        stages:
+          - pre-commit
+          - pre-push
+          - manual
   - repo: https://github.com/DavidAnson/markdownlint-cli2
     rev: v0.15.0
     hooks:
