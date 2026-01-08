@@ -1,4 +1,4 @@
-﻿# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: MIT
 """
 Summarise generator trace events.
 

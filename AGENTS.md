@@ -1,4 +1,4 @@
-﻿# Contributor Guidelines
+# Contributor Guidelines
 
 **Welcome to the MalbolgeGenerator project!** Whether you're fixing a bug, adding a feature, or improving documentation, we appreciate your contribution. This guide will help you understand how the project is organized and what standards we follow.
 
@@ -9,7 +9,6 @@
 - **`malbolge/interpreter.py`** — The Malbolge execution engine (`MalbolgeInterpreter`), error classes (like `InvalidOpcodeError`), and execution results
 - **`malbolge/generator.py`** — The program generator (`ProgramGenerator`), configuration (`GenerationConfig`), and performance statistics
 - **`malbolge/encoding.py` / `utils.py`** — Helper functions for converting between ASCII and opcodes, plus ternary arithmetic utilities
-- **`MalbolgeInterpreter.py`** (root) — Legacy compatibility shim (for old code that imports from here)
 
 **Where to put new code:**
 
@@ -48,7 +47,7 @@
 
 - **Run all tests**: `python -m unittest discover -v`
 
-  - Tests cover interpreter execution, generator logic, and encoding/decoding
+  - Tests cover interpreter execution, generator logic, encoding/decoding, and CLI commands
 
 - **Quick smoke test**: `python -c "from malbolge import ProgramGenerator; print(ProgramGenerator().generate_for_string('Hi').opcodes)"`
 
@@ -73,7 +72,7 @@
 
 - **Functions and variables**: `snake_case` (e.g., `generate_program`, `max_depth`)
 - **Classes**: `UpperCamelCase` (e.g., `ProgramGenerator`, `MalbolgeInterpreter`)
-- **Constants**: `ALL_CAPS` (e.g., `ENCRYPTION_TABLE`, `MAX_MEMORY`)
+- **Constants**: `ALL_CAPS` (e.g., `ENCRYPTION_TRANSLATE`, `MAX_ADDRESS_SPACE`)
 - **Private/internal functions**: Prefix with `_` (e.g., `_calculate_opcode`)
 
 ### Code Organization
@@ -120,30 +119,33 @@ def generate_for_string(target: str, config: GenerationConfig | None = None) -> 
 **1. Use deterministic seeds** (for consistent results):
 
 ```python
-def test_generation_is_deterministic():
-    generator = ProgramGenerator()
+def test_generation_is_deterministic(self):
     config = GenerationConfig(random_seed=42)
 
-    result1 = generator.generate_for_string("Hi", config)
-    result2 = generator.generate_for_string("Hi", config)
+    # Fresh generators ensure determinism test is valid
+    generator1 = ProgramGenerator()
+    generator2 = ProgramGenerator()
 
-    assert result1.opcodes == result2.opcodes  # Same seed = same program
+    result1 = generator1.generate_for_string("Hi", config=config)
+    result2 = generator2.generate_for_string("Hi", config=config)
+
+    self.assertEqual(result1.opcodes, result2.opcodes)  # Same seed = same program
 ```
 
 **2. Test both success and failure cases**:
 
 ```python
 # Success case
-def test_valid_program_executes():
+def test_valid_program_executes(self):
     interpreter = MalbolgeInterpreter()
     result = interpreter.execute("v")  # Simple halt
-    assert result.halted
-    assert result.halt_reason == "halt_opcode"
+    self.assertTrue(result.halted)
+    self.assertEqual(result.halt_reason, "halt_opcode")
 
 # Failure case
-def test_invalid_opcode_raises_error():
+def test_invalid_opcode_raises_error(self):
     interpreter = MalbolgeInterpreter()
-    with pytest.raises(InvalidOpcodeError):
+    with self.assertRaises(InvalidOpcodeError):
         interpreter.execute("xyz")  # Invalid opcodes
 ```
 

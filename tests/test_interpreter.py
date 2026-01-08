@@ -192,6 +192,53 @@ class InterpreterTests(unittest.TestCase):
         result = interpreter.execute("iv", capture_machine=True)
         self.assertTrue(result.halted)
 
+    def test_i_instruction_jumps_to_data_pointer_target(self) -> None:
+        interpreter = MalbolgeInterpreter()
+        interpreter.machine = MalbolgeMachine(tape=[3, 0, 0, 0, 0])
+        interpreter._program_length = 5
+        interpreter._reset_diagnostics()
+
+        visited: list[int] = []
+
+        def fake_instruction(self: MalbolgeInterpreter, index: int) -> str:
+            visited.append(index)
+            return "i" if index == 0 else "v"
+
+        cast(Any, interpreter)._instruction_at = MethodType(
+            fake_instruction, interpreter
+        )
+
+        result = interpreter.resume_execution(capture_machine=True)
+        self.assertEqual(result.halt_metadata.last_instruction, "v")
+        self.assertEqual(result.halt_metadata.last_jump_target, 3)
+        self.assertEqual(visited, [0, 4])
+        self.assertEqual(result.halt_reason, "halt_opcode")
+
+    def test_j_instruction_indirects_data_pointer(self) -> None:
+        interpreter = MalbolgeInterpreter()
+        interpreter.machine = MalbolgeMachine(tape=[2, 0, 0, 0, 0])
+        interpreter._program_length = 2
+        interpreter._reset_diagnostics()
+
+        visited: list[int] = []
+
+        def fake_instruction(self: MalbolgeInterpreter, index: int) -> str:
+            visited.append(index)
+            return "j" if index == 0 else "v"
+
+        cast(Any, interpreter)._instruction_at = MethodType(
+            fake_instruction, interpreter
+        )
+
+        result = interpreter.resume_execution(capture_machine=True)
+        self.assertEqual(result.halt_metadata.last_instruction, "v")
+        self.assertEqual(result.halt_metadata.last_jump_target, 2)
+        self.assertEqual(visited, [0, 1])
+        self.assertEqual(result.halt_reason, "halt_opcode")
+        self.assertIsNotNone(result.machine)
+        machine = cast(MalbolgeMachine, result.machine)
+        self.assertEqual(machine.d, 4)
+
     def test_separate_interpreters_run_in_parallel(self) -> None:
         def execute_program(_: int) -> str:
             return MalbolgeInterpreter().execute("v").output
