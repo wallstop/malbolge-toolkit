@@ -139,6 +139,8 @@ Malbolge has only **8 valid instructions**. When you calculate `(C + memory[C]) 
 | **o**  | No-op     | *continue*                               | Do nothing (except increment C and D)                           |
 | **v**  | Halt      | *stop*                                   | End program execution                                           |
 
+> Note: Some secondary sources flip the `i`/`j` names. This project follows the original spec and reference interpreter: `i` jumps the code pointer (`C = memory[D]`), and `j` re-points the data pointer (`D = memory[D]`).
+
 ### The "Crazy Operation"
 
 The **crazy operation** (instruction `p`) is a custom ternary truth table that combines two ternary digits. It's designed to be non-intuitive and make computation extremely difficult. Here's a simplified view:
