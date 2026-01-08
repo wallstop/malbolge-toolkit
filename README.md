@@ -6,7 +6,7 @@
 
 1. [Introduction](#what-is-this)
 1. [Features](#features)
-1. [Installation](#installation)
+1. [Quick Start](#quick-start)
 1. [Usage](#command-line-interface-cli)
 1. [Examples](#examples-and-learning-resources)
 1. [Contributing](#contributing)
@@ -63,18 +63,6 @@ This project ships as a modular Python package (`malbolge`) with:
 - **CLI Tools**: Command-line interface for generation, execution, and benchmarking
 
 - **Examples & Notebooks**: Working code examples and interactive Jupyter tutorials
-
-## 📌 Contributing
-
-Thank you for creating this cool project!\
-If you'd like to contribute, you could start with:
-
-- Improving documentation
-- Fixing typos
-- Adding examples
-- Updating the Table of Contents
-
-We recommend reviewing existing files before submitting a PR.
 
 ## Quick Start
 
@@ -596,7 +584,7 @@ Contributions are welcome! Whether you're:
 - Creating new examples
 - Fixing bugs
 
-Please see the [Agent directory](AGENTS.md) for coding standards and the [project roadmap](PLAN.md) for upcoming milestones.
+See our [Contributor Guidelines](AGENTS.md) for development setup, coding standards, and PR guidelines.
 
 ## License
 
