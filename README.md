@@ -2,6 +2,16 @@
 
 **Automatically generate and execute programs in Malbolge, the most difficult esoteric programming language ever created.**
 
+## 📌 Table of Contents
+1. [Introduction](#introduction)
+2. [Features](#features)
+3. [Installation](#installation)
+4. [Usage](#usage)
+5. [Examples](#examples)
+6. [Contributing](#contributing)
+7. [License](#license)
+
+
 ## What is This?
 
 MalbolgeGenerator is a Python toolkit that solves a fascinating challenge: **automatically writing programs in Malbolge**, a programming language so intentionally difficult that the first "Hello World" program took 2 years to create and required computer search algorithms to discover (no human could write it by hand!).
@@ -49,6 +59,18 @@ This project ships as a modular Python package (`malbolge`) with:
 - **Utility Modules**: Encoding/decoding, base-3 arithmetic, and crazy-operation simulation
 - **CLI Tools**: Command-line interface for generation, execution, and benchmarking
 - **Examples & Notebooks**: Working code examples and interactive Jupyter tutorials
+
+- ## 📌 Contributing
+
+Thank you for creating this cool project!  
+If you’d like to contribute, you could start with:
+- Improving documentation
+- Fixing typos
+- Adding examples
+- Updating the Table of Contents
+
+We recommend reviewing existing files before submitting a PR.
+
 
 ## Quick Start
 
