@@ -34,8 +34,7 @@ def path_to_wiki_name(relative_path: str) -> str:
         README.md -> Home
     """
     path = relative_path.strip().replace("\\", "/")
-    while path.startswith("./") or path.startswith("../"):
-        path = path[2:] if path.startswith("./") else path[3:]
+    path = re.sub(r"^(?:\./|\.\./)+", "", path)
 
     if path.lower() == "readme.md":
         return "Home"
@@ -118,7 +117,7 @@ def _transform_images_in_text(text: str) -> str:
         alt = match.group(1)
         target = match.group(2)
 
-        if target.startswith(("http://", "https://", "//")):
+        if target.startswith(("http://", "https://", "//", "mailto:", "tel:")):
             return match.group(0)
 
         images_index = target.lower().find("images/")
@@ -147,7 +146,7 @@ def clear_destination(dest_dir: Path) -> None:
     if not dest_dir.exists():
         return
     for entry in dest_dir.iterdir():
-        if entry.name == ".git":
+        if entry.name in {".git", ".gitignore", ".gitattributes"}:
             continue
         if entry.is_dir():
             shutil.rmtree(entry)
@@ -206,6 +205,25 @@ def display_name(stem: str) -> str:
     return stem.replace("-", " ")
 
 
+def _categorize_page(stem: str) -> str:
+    """
+    Assign a sidebar category based on common naming conventions.
+
+    This avoids hardcoding specific filenames while keeping predictable
+    sections for guides and project docs.
+    """
+    lower = stem.lower()
+
+    guide_keywords = ("tutorial", "guide", "primer", "howto", "walkthrough")
+    project_keywords = ("release", "changelog", "roadmap", "project", "architecture")
+
+    if any(keyword in lower for keyword in guide_keywords):
+        return "Guides"
+    if any(keyword in lower for keyword in project_keywords):
+        return "Project"
+    return "Additional Pages"
+
+
 def generate_sidebar(dest_dir: Path) -> str:
     pages = sorted(
         f.stem
@@ -217,11 +235,19 @@ def generate_sidebar(dest_dir: Path) -> str:
 
     if "Home" in pages:
         lines.append("- [Home](Home)")
-    guides = [page for page in pages if page in {"Tutorial", "Malbolge-Primer"}]
-    project = [page for page in pages if page in {"Release-Notes"}]
+    categorized: dict[str, list[str]] = {
+        "Guides": [],
+        "Project": [],
+        "Additional Pages": [],
+    }
+    for page in pages:
+        if page == "Home":
+            continue
+        category = _categorize_page(page)
+        categorized.setdefault(category, []).append(page)
 
     def section(title: str, items: Iterable[str]) -> None:
-        items = list(items)
+        items = sorted(items)
         if not items:
             return
         lines.append("")
@@ -229,13 +255,9 @@ def generate_sidebar(dest_dir: Path) -> str:
         for item in items:
             lines.append(f"- [{display_name(item)}]({item})")
 
-    section("Guides", guides)
-    section("Project", project)
-
-    remaining = [
-        page for page in pages if page not in {"Home"} | set(guides) | set(project)
-    ]
-    section("Additional Pages", remaining)
+    section("Guides", categorized.get("Guides", []))
+    section("Project", categorized.get("Project", []))
+    section("Additional Pages", categorized.get("Additional Pages", []))
 
     return "\n".join(lines) + "\n"
 
@@ -272,8 +294,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--pages-url",
-        default="https://github.com/wallstop/MalbolgeGenerator/tree/main/docs",
-        help="Documentation URL for footer links.",
+        default="https://wallstop.github.io/MalbolgeGenerator/",
+        help="Documentation URL for footer links (GitHub Pages).",
     )
     parser.add_argument(
         "--no-clean",

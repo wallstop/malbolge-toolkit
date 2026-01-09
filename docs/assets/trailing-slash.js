@@ -6,7 +6,8 @@
 
   // Skip file:// and URLs that already reference a file
   if (loc.protocol === "file:") return;
-  if (/[./][^/]*\.[^/]*$/.test(loc.pathname)) return;
+  // Skip URLs that already reference a file (extension at the end of the path)
+  if (/\/[^/]+\.[^/]+$/.test(loc.pathname)) return;
 
   if (!loc.pathname.endsWith("/")) {
     var newPath = loc.pathname + "/";

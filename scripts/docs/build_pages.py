@@ -26,9 +26,9 @@ def copy_markdown_sources(staging_dir: Path) -> None:
     """
     Populate the staging directory with markdown sources.
 
-    Currently pulls the project README (as index.md) and the entire docs/
-    directory. Additional folders can be added here later without touching
-    the MkDocs configuration.
+    Currently pulls the project README (as index.md), AGENTS.md, the entire
+    docs/ directory, and examples/. Additional folders can be added here later
+    without touching the MkDocs configuration.
     """
     staging_dir.mkdir(parents=True, exist_ok=True)
 
@@ -87,12 +87,11 @@ def rewrite_readme_links(staging_dir: Path) -> None:
     for md_file in staging_dir.rglob("*.md"):
         text = md_file.read_text(encoding="utf-8")
 
-        def replace(match: re.Match, md_path: Path = md_file) -> str:
+        relative_index = Path(os.path.relpath(index_path, md_file.parent)).as_posix()
+
+        def replace(match: re.Match, index: str = relative_index) -> str:
             anchor = match.group(1) or ""
-            relative_index = Path(
-                os.path.relpath(index_path, md_path.parent)
-            ).as_posix()
-            return f"({relative_index}{anchor})"
+            return f"({index}{anchor})"
 
         updated = pattern.sub(replace, text)
         if updated != text:

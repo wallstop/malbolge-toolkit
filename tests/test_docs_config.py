@@ -12,13 +12,14 @@ def _load_mkdocs_lines() -> list[str]:
     return MKDOCS_PATH.read_text(encoding="utf-8").splitlines()
 
 
-def _extract_setting(lines: list[str], key: str) -> str | None:
+def _extract_settings(lines: list[str], key: str) -> list[str]:
     """
     Lightweight parser for simple top-level key/value settings in mkdocs.yml.
 
     This intentionally avoids a YAML dependency while providing better
     diagnostics than raw string searching.
     """
+    values: list[str] = []
     prefix = f"{key}:"
     for line in lines:
         stripped = line.strip()
@@ -27,8 +28,8 @@ def _extract_setting(lines: list[str], key: str) -> str | None:
         if not stripped.startswith(prefix):
             continue
         value = stripped.split(":", 1)[1].split("#", 1)[0].strip()
-        return value.strip('"').strip("'")
-    return None
+        values.append(value.strip('"').strip("'"))
+    return values
 
 
 class DocsConfigTests(unittest.TestCase):
@@ -40,10 +41,19 @@ class DocsConfigTests(unittest.TestCase):
         view instead of the published GitHub Pages site.
         """
         lines = _load_mkdocs_lines()
-        site_url = _extract_setting(lines, "site_url")
-        self.assertIsNotNone(
-            site_url, f"mkdocs.yml missing site_url setting (searched {MKDOCS_PATH})"
+        site_urls = _extract_settings(lines, "site_url")
+        self.assertGreaterEqual(
+            len(site_urls),
+            1,
+            f"mkdocs.yml missing site_url setting (searched {MKDOCS_PATH})",
         )
+        self.assertLessEqual(
+            len(site_urls),
+            1,
+            f"mkdocs.yml should define site_url only once (found {site_urls})",
+        )
+
+        site_url = site_urls[0]
 
         requirements = [
             (
