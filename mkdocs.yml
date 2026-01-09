@@ -1,0 +1,67 @@
+site_name: MalbolgeGenerator
+site_description: Automated Malbolge program generator and interpreter
+site_url: https://github.com/wallstop/MalbolgeGenerator/tree/main/docs
+repo_url: https://github.com/wallstop/MalbolgeGenerator
+repo_name: wallstop/MalbolgeGenerator
+
+docs_dir: build/site-src
+site_dir: build/site
+
+nav:
+  - Overview: index.md
+  - Guides:
+      - Tutorial: docs/TUTORIAL.md
+      - Malbolge Primer: docs/MALBOLGE_PRIMER.md
+  - Project:
+      - Release Notes: docs/RELEASE_NOTES.md
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.expand
+    - navigation.sections
+    - navigation.top
+    - toc.integrate
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+  palette:
+    - scheme: default
+      primary: teal
+      accent: amber
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: teal
+      accent: amber
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  icon:
+    repo: fontawesome/brands/github
+  font:
+    text: "Fira Sans"
+    code: "Fira Code"
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - footnotes
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.snippets:
+      base_path: .
+  - pymdownx.tabbed:
+      alternate_style: true
+
+plugins:
+  - search
+extra_javascript:
+  - assets/trailing-slash.js

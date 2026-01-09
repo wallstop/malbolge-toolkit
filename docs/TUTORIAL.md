@@ -788,7 +788,7 @@ ______________________________________________________________________
 ## Appendix: Sample Malbolge Programs
 
 The repository ships with ready-made sample programs under
-[`examples/samples/`](../examples/samples):
+[`examples/samples/README.md`](../examples/samples/README.md):
 
 - [PROGRAM_ASCII.txt](../examples/samples/PROGRAM_ASCII.txt): A generated Malbolge program that prints "Hello", as its raw ASCII source.
 - [PROGRAM_OP_CODES.txt](../examples/samples/PROGRAM_OP_CODES.txt): A generated Malbolge program that prints "Hello", as the Malbolge's interpreter's op codes.

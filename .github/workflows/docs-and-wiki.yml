@@ -1,0 +1,152 @@
+name: Build Docs and Sync Wiki
+
+"on":
+  push:
+    branches:
+      - main
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: docs-and-wiki
+  cancel-in-progress: false
+
+jobs:
+  build-pages:
+    name: Build GitHub Pages site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install documentation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r docs/requirements.txt
+
+      - name: Build MkDocs site
+        run: python scripts/docs/build_pages.py --strict
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: build/site
+
+      - name: Build summary
+        run: |
+          {
+            echo "## Documentation build"
+            echo ""
+            echo "- Site directory: \`build/site\`"
+            echo "- MkDocs config: \`mkdocs.yml\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  deploy-pages:
+    name: Deploy GitHub Pages
+    needs: build-pages
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Deployment summary
+        run: |
+          {
+            echo "## Pages deployment"
+            echo ""
+            echo "Deployed from commit \`${{ github.sha }}\`"
+            echo "URL: ${{ steps.deployment.outputs.page_url }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  sync-wiki:
+    name: Sync GitHub Wiki
+    needs: build-pages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check wiki availability
+        id: wiki
+        run: |
+          set -euo pipefail
+          WIKI_URL="https://github.com/${{ github.repository }}.wiki.git"
+          if git ls-remote "$WIKI_URL" HEAD >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Wiki detected at $WIKI_URL"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Wiki repository not found. Create the wiki and rerun to enable sync."
+          fi
+
+      - name: Clone wiki repository
+        if: steps.wiki.outputs.exists == 'true'
+        run: |
+          WIKI_URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git"
+          git clone "$WIKI_URL" wiki
+
+      - name: Set up Python
+        if: steps.wiki.outputs.exists == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Generate wiki content
+        if: steps.wiki.outputs.exists == 'true'
+        run: |
+          python scripts/wiki/sync_wiki.py \
+            --source . \
+            --dest wiki \
+            --repo-url "https://github.com/${{ github.repository }}" \
+            --pages-url "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+
+      - name: Commit and push wiki changes
+        if: steps.wiki.outputs.exists == 'true'
+        run: |
+          cd wiki
+          git add -A
+          if git diff --staged --quiet; then
+            echo "No wiki changes to commit"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "Sync wiki from ${{ github.sha }}"
+
+          git push
+
+      - name: Wiki summary
+        if: steps.wiki.outputs.exists == 'true'
+        run: |
+          {
+            echo "## Wiki sync"
+            echo ""
+            echo "Repository: ${{ github.repository }}"
+            echo "Source commit: \`${{ github.sha }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Wiki unavailable summary
+        if: steps.wiki.outputs.exists != 'true'
+        run: |
+          {
+            echo "## Wiki sync skipped"
+            echo ""
+            echo "Wiki repository is not initialized for ${{ github.repository }}."
+            echo "Enable the wiki in repository settings and rerun this workflow."
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -3,6 +3,11 @@ __pycache__/
 .idea/
 .claude/
 .venv/
+build/
+site/
+.cache/
+/wiki/
+*.egg-info/
 benchmarks/latest.json
 benchmarks/baseline_summary.txt
 benchmarks/cycle_repeat_report.txt
