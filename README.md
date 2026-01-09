@@ -2,7 +2,7 @@
 
 **Automatically generate and execute programs in Malbolge, the most difficult esoteric programming language ever created.**
 
-[![Docs](https://img.shields.io/badge/Docs-Repository-1E88E5?logo=github&logoColor=white)](https://github.com/wallstop/MalbolgeGenerator/tree/main/docs)
+[![Docs](https://img.shields.io/badge/Docs-GitHub%20Pages-1E88E5?logo=githubpages&logoColor=white)](https://wallstop.github.io/malbolge-toolkit/)
 
 ## 📌 Table of Contents
 
@@ -72,8 +72,8 @@ This project ships as a modular Python package (`malbolge`) with:
 
 ```bash
 # Clone the repository (use your fork instead of wallstop if applicable)
-git clone https://github.com/wallstop/MalbolgeGenerator.git
-cd MalbolgeGenerator
+git clone https://github.com/wallstop/malbolge-toolkit.git
+cd malbolge-toolkit
 
 # Create a virtual environment (recommended)
 python -m venv .venv
@@ -550,7 +550,7 @@ through the configured pre-commit hooks.
 ### Project Structure
 
 ```
-MalbolgeGenerator/
+malbolge-toolkit/
 ├── malbolge/              # Main package
 │   ├── __init__.py        # Public API exports
 │   ├── interpreter.py     # Execution engine
@@ -673,7 +673,7 @@ If you use this project in academic work, please cite:
   author = {Pinkerton, Eli},
   title = {MalbolgeGenerator: Automated Malbolge Program Synthesis},
   year = {2024},
-  url = {https://github.com/wallstop/MalbolgeGenerator}
+  url = {https://github.com/wallstop/malbolge-toolkit}
 }
 ```
 
@@ -724,7 +724,7 @@ Not sure where to start? Follow this path:
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/wallstop/MalbolgeGenerator/issues)
+- **Issues**: [GitHub Issues](https://github.com/wallstop/malbolge-toolkit/issues)
 - **Documentation**: Start with the [Malbolge Primer](docs/MALBOLGE_PRIMER.md)
 
 ______________________________________________________________________
