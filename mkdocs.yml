@@ -1,6 +1,6 @@
 site_name: MalbolgeGenerator
 site_description: Automated Malbolge program generator and interpreter
-site_url: https://github.com/wallstop/MalbolgeGenerator/tree/main/docs
+site_url: https://wallstop.github.io/MalbolgeGenerator/
 repo_url: https://github.com/wallstop/MalbolgeGenerator
 repo_name: wallstop/MalbolgeGenerator
 
