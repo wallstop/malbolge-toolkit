@@ -63,7 +63,7 @@ class DocsConfigTests(unittest.TestCase):
             ),
             (
                 "github_pages_scope",
-                lambda value: "github.io" in value and "/MalbolgeGenerator/" in value,
+                lambda value: "github.io" in value and "/malbolge-toolkit/" in value,
                 "site_url should target the published GitHub Pages path "
                 "to preserve the repository scope",
             ),
