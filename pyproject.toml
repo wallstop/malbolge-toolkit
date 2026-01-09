@@ -20,9 +20,9 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/wallstop/MalbolgeGenerator"
-Documentation = "https://github.com/wallstop/MalbolgeGenerator"
-Issues = "https://github.com/wallstop/MalbolgeGenerator/issues"
+Homepage = "https://github.com/wallstop/malbolge-toolkit"
+Documentation = "https://wallstop.github.io/malbolge-toolkit/"
+Issues = "https://github.com/wallstop/malbolge-toolkit/issues"
 
 [tool.setuptools]
 include-package-data = false

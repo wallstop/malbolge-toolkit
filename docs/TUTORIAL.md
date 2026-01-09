@@ -42,8 +42,8 @@ ______________________________________________________________________
 
 ```bash
 # Clone the repository (use your fork instead of wallstop if applicable)
-git clone https://github.com/wallstop/MalbolgeGenerator.git
-cd MalbolgeGenerator
+git clone https://github.com/wallstop/malbolge-toolkit.git
+cd malbolge-toolkit
 ```
 
 ### Step 2: Create Virtual Environment
@@ -718,7 +718,7 @@ if result.trace:
    python -m unittest discover -v
    ```
 
-1. **Check GitHub Issues**: [GitHub Issues](https://github.com/wallstop/MalbolgeGenerator/issues)
+1. **Check GitHub Issues**: [GitHub Issues](https://github.com/wallstop/malbolge-toolkit/issues)
 
 ______________________________________________________________________
 

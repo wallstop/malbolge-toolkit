@@ -289,12 +289,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--repo-url",
-        default="https://github.com/wallstop/MalbolgeGenerator",
+        default="https://github.com/wallstop/malbolge-toolkit",
         help="Repository URL for footer links.",
     )
     parser.add_argument(
         "--pages-url",
-        default="https://wallstop.github.io/MalbolgeGenerator/",
+        default="https://wallstop.github.io/malbolge-toolkit/",
         help="Documentation URL for footer links (GitHub Pages).",
     )
     parser.add_argument(
