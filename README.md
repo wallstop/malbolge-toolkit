@@ -2,6 +2,8 @@
 
 **Automatically generate and execute programs in Malbolge, the most difficult esoteric programming language ever created.**
 
+[![Docs](https://img.shields.io/badge/Docs-Repository-1E88E5?logo=github&logoColor=white)](https://github.com/wallstop/MalbolgeGenerator/tree/main/docs)
+
 ## 📌 Table of Contents
 
 1. [Introduction](#what-is-this)
@@ -235,20 +237,20 @@ The direct benchmark modules (`bench_interpreter`, `bench_generator`) print timi
 
 ### Beginner Resources
 
-1. **[Malbolge Primer](docs/MALBOLGE_PRIMER.md)** - Start here! Comprehensive guide covering:
+#### [Malbolge Primer](docs/MALBOLGE_PRIMER.md)
 
-   - What Malbolge is and why it's impossible to program by hand
-   - The 8 instructions and how they work
-   - Ternary arithmetic and the "crazy operation"
-   - Working examples with explanations
-   - Links to external resources and papers
+- What Malbolge is and why it's impossible to program by hand
+- The 8 instructions and how they work
+- Ternary arithmetic and the "crazy operation"
+- Working examples with explanations
+- Links to external resources and papers
 
-1. **[Tutorial](docs/TUTORIAL.md)** - End-to-end CLI workflows:
+#### [Tutorial](docs/TUTORIAL.md)
 
-   - Environment setup
-   - Command-line usage patterns
-   - Troubleshooting common issues
-   - Advanced profiling techniques
+- Environment setup
+- Command-line usage patterns
+- Troubleshooting common issues
+- Advanced profiling techniques
 
 ### Example Scripts
 
@@ -315,6 +317,26 @@ python -m malbolge.cli generate --text "Hi" --seed 42 --trace | python examples/
 ```
 
 The visualiser renders per-depth bars, reason counts, and the first few retained candidates so you can spot heuristic bottlenecks at a glance.
+
+## Documentation Site & Wiki
+
+Generate and preview the GitHub Pages site (with light/dark theme toggle) and wiki locally:
+
+```bash
+# Install documentation tooling once
+python -m pip install -r docs/requirements.txt
+
+# Build the static site into build/site (also stages sources into build/site-src)
+python scripts/docs/build_pages.py
+
+# Serve locally with live reload
+python scripts/docs/build_pages.py --serve
+
+# Generate wiki markdown into build/wiki
+python scripts/wiki/sync_wiki.py
+```
+
+Open `build/site/index.html` in a browser to check the site output, and browse the `build/wiki` markdown files (or view them in your favorite Markdown renderer) to confirm wiki rendering and links.
 
 ## API Documentation
 
