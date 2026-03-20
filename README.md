@@ -4,6 +4,14 @@
 
 [![Docs](https://img.shields.io/badge/Docs-GitHub%20Pages-1E88E5?logo=githubpages&logoColor=white)](https://wallstop.github.io/malbolge-toolkit/)
 
+> **🤖 AI Assistance Disclosure:**
+>
+> The core algorithm — the search-based Malbolge program generator — was originally conceived, designed, and implemented entirely by [wallstop](https://github.com/wallstop) during college as an independent creation over a decade ago.
+>
+> Recent versions of this project have incorporated **significant AI assistance** for performance optimizations, usability improvements, documentation, "Pythonic" code conversions, and general maintenance. **AI-assisted code is present throughout the codebase.**
+>
+> Users and contributors should be aware of this distinction when evaluating the project's origins and its current development practices. **When assessing code quality and provenance, please consider this context.**
+
 ## 📌 Table of Contents
 
 1. [Introduction](#what-is-this)
