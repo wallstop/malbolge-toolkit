@@ -38,4 +38,7 @@ jobs:
           python -m pip install pip-audit
 
       - name: Audit dependencies
-        run: pip-audit --progress-spinner off
+        run: |
+          # CVE-2026-4539: ReDoS in pygments AdlLexer; no fix available on PyPI yet
+          # (fixed upstream in pygments 3.3, not yet released). Remove once released.
+          pip-audit --progress-spinner off --ignore-vuln CVE-2026-4539
