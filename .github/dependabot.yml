@@ -1,17 +1,43 @@
 version: 2
+
 updates:
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 1
+    groups:
+      python-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
+          - "minor"
+          - "patch"
     assignees:
       - "wallstop"
     reviewers:
       - "wallstop"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+      day: "monday"
+      time: "04:30"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 1
+    groups:
+      github-actions-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
+          - "minor"
+          - "patch"
     assignees:
       - "wallstop"
     reviewers:
