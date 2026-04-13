@@ -25,7 +25,8 @@ ALLOWED_URL_PATTERNS = [
 # outside repository control. Error names are sourced from aiohttp 3.x client
 # exceptions and Python built-in timeout errors. We keep deterministic content
 # failures (e.g. 404, malformed URLs, persistent DNS unknown-host such as
-# "No address associated with hostname") as hard failures.
+# "No address associated with hostname", which is intentionally not listed in
+# TRANSIENT_ERROR_SUBSTRINGS) as hard failures.
 TRANSIENT_ERROR_CLASS_NAMES = {
     "ClientConnectorCertificateError",
     "ClientProxyConnectionError",
@@ -80,7 +81,7 @@ def is_transient_network_error(error: object) -> bool:
 
 
 def check_target(path: Path) -> Iterable[tuple[str, str, object]]:
-    # Imported locally to allow unit tests to mock this module without
+    # Imported locally to allow unit tests to mock linkcheck behavior without
     # requiring linkcheckmd as a test dependency.
     import linkcheckmd
 

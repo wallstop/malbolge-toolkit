@@ -13,7 +13,7 @@ try:
     AiohttpClientConnectionError = importlib.import_module(
         "aiohttp"
     ).ClientConnectionError
-except Exception:  # pragma: no cover - fallback for environments without aiohttp
+except ModuleNotFoundError:  # pragma: no cover - fallback when aiohttp is absent
     AiohttpClientConnectionError = type("ClientConnectionError", (Exception,), {})
 
 
