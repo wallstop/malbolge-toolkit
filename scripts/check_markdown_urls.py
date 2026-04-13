@@ -22,10 +22,10 @@ ALLOWED_URL_PATTERNS = [
     re.compile(r"^https://www\.trs\.cm\.is\.nagoya-u\.ac\.jp/"),
 ]
 # Network and certificate transport failures that are often transient and
-# outside repository control. Error names are sourced from aiohttp client
+# outside repository control. Error names are sourced from aiohttp 3.x client
 # exceptions and Python built-in timeout errors. We keep deterministic content
-# failures (e.g. 404, malformed URLs, persistent DNS unknown-host) as hard
-# failures.
+# failures (e.g. 404, malformed URLs, persistent DNS unknown-host such as
+# "No address associated with hostname") as hard failures.
 TRANSIENT_ERROR_CLASS_NAMES = {
     "ClientConnectorCertificateError",
     "ClientProxyConnectionError",

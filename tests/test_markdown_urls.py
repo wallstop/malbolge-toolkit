@@ -83,6 +83,8 @@ class MarkdownUrlCheckTests(unittest.TestCase):
         self.assertIn("Broken Markdown links detected:", stderr.getvalue())
 
     def test_main_fails_on_unknown_host_errors_by_default(self) -> None:
+        # Unknown-host DNS errors are treated as hard failures because they
+        # commonly indicate dead/misspelled domains rather than transient flakiness.
         failures = [
             (
                 "README.md",
