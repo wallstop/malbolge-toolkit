@@ -74,6 +74,8 @@ def is_transient_network_error(error: object) -> bool:
 
 
 def check_target(path: Path) -> Iterable[tuple[str, str, object]]:
+    # Imported lazily so unit tests can import this module without requiring
+    # linkcheckmd to be installed in the main environment.
     import linkcheckmd
 
     result = linkcheckmd.check_links(
@@ -97,7 +99,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--strict-network",
         action="store_true",
         help=(
-            "Treat transient network/certificate/DNS failures as hard failures "
+            "Treat transient network/certificate/timeout failures as hard failures "
             "(default: report diagnostics but do not fail)."
         ),
     )

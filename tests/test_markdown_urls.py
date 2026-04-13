@@ -13,7 +13,7 @@ class ClientConnectorDNSError(Exception):
     pass
 
 
-class MarkdownUrlChecksTests(unittest.TestCase):
+class MarkdownUrlCheckTests(unittest.TestCase):
     def test_is_transient_network_error_data_driven(self) -> None:
         cases = [
             (ClientConnectorDNSError("dns failure"), False),
