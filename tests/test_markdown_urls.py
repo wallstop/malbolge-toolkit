@@ -13,16 +13,22 @@ class ClientConnectorDNSError(Exception):
     pass
 
 
+class ClientConnectionError(Exception):
+    pass
+
+
 class MarkdownUrlCheckTests(unittest.TestCase):
     def test_is_transient_network_error_data_driven(self) -> None:
         cases = [
             (ClientConnectorDNSError("dns failure"), False),
+            (ClientConnectionError("connection dropped"), True),
             (RuntimeError("certificate verify failed"), True),
             (RuntimeError("timed out while connecting"), True),
             (RuntimeError("Name or service not known"), False),
             (RuntimeError("nodename nor servname provided"), False),
             (RuntimeError("404 Not Found"), False),
             (ValueError("invalid url"), False),
+            (None, False),
         ]
 
         for error, expected in cases:
