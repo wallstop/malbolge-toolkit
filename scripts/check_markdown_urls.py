@@ -74,7 +74,7 @@ def is_transient_network_error(error: object) -> bool:
     """Return True when link-check errors are likely transient transport failures."""
     if not isinstance(error, Exception):
         return False
-    if type(error).__name__ in TRANSIENT_ERROR_CLASS_NAMES:
+    if any(cls.__name__ in TRANSIENT_ERROR_CLASS_NAMES for cls in type(error).__mro__):
         return True
     message = summarize_error(error).lower()
     return any(marker in message for marker in TRANSIENT_ERROR_SUBSTRINGS)

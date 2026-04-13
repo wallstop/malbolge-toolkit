@@ -10,18 +10,22 @@ from unittest.mock import patch
 from scripts import check_markdown_urls
 
 try:
-    AiohttpClientConnectionError = importlib.import_module(
-        "aiohttp"
-    ).ClientConnectionError
+    aiohttp_module = importlib.import_module("aiohttp")
+    AiohttpClientConnectionError: type[Exception] = aiohttp_module.ClientConnectionError
 except ModuleNotFoundError:  # pragma: no cover - fallback when aiohttp is absent
     AiohttpClientConnectionError = type("ClientConnectionError", (Exception,), {})
 
 
 class MarkdownUrlCheckTests(unittest.TestCase):
     def test_is_transient_network_error_data_driven(self) -> None:
+        derived_connection_error = type(
+            "DerivedConnectionError", (AiohttpClientConnectionError,), {}
+        )
+
         cases = [
             (RuntimeError("No address associated with hostname"), False),
             (AiohttpClientConnectionError("connection dropped"), True),
+            (derived_connection_error("connection dropped"), True),
             (RuntimeError("certificate verify failed"), True),
             (RuntimeError("timed out while connecting"), True),
             (RuntimeError("Name or service not known"), False),
