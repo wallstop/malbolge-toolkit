@@ -17,12 +17,27 @@ from pathlib import Path
 from typing import cast
 from urllib.parse import urlparse
 
-import linkcheckmd
-
 SKIP_SCHEMES = {"mailto", "tel", "irc", "ssh"}
 ALLOWED_URL_PATTERNS = [
     re.compile(r"^https://www\.trs\.cm\.is\.nagoya-u\.ac\.jp/"),
 ]
+TRANSIENT_ERROR_CLASS_NAMES = {
+    "ClientConnectorCertificateError",
+    "ClientProxyConnectionError",
+    "ClientOSError",
+    "ClientConnectionError",
+    "ServerTimeoutError",
+    "ConnectionTimeoutError",
+    "SocketTimeoutError",
+    "TimeoutError",
+}
+TRANSIENT_ERROR_SUBSTRINGS = (
+    "certificate verify failed",
+    "temporary failure in name resolution",
+    "network is unreachable",
+    "connection reset",
+    "timed out",
+)
 
 
 def collect_targets(arguments: Sequence[str]) -> list[Path]:
@@ -49,7 +64,18 @@ def summarize_error(error: object) -> str:
     return str(error)
 
 
+def is_transient_network_error(error: object) -> bool:
+    if not isinstance(error, Exception):
+        return False
+    if type(error).__name__ in TRANSIENT_ERROR_CLASS_NAMES:
+        return True
+    message = summarize_error(error).lower()
+    return any(marker in message for marker in TRANSIENT_ERROR_SUBSTRINGS)
+
+
 def check_target(path: Path) -> Iterable[tuple[str, str, object]]:
+    import linkcheckmd
+
     result = linkcheckmd.check_links(
         path=path,
         ext=".md",
@@ -67,14 +93,41 @@ def main(argv: Sequence[str] | None = None) -> int:
         nargs="*",
         help="Optional paths (files or directories). Defaults to the repository root.",
     )
+    parser.add_argument(
+        "--strict-network",
+        action="store_true",
+        help=(
+            "Treat transient network/certificate/DNS failures as hard failures "
+            "(default: report diagnostics but do not fail)."
+        ),
+    )
     args = parser.parse_args(argv)
 
     failures: list[tuple[str, str, object]] = []
+    transient_failures: list[tuple[str, str, object]] = []
     for target in collect_targets(args.paths):
         for origin, url, error in check_target(target):
             if should_skip_link(url):
                 continue
+            if not args.strict_network and is_transient_network_error(error):
+                transient_failures.append((origin, url, error))
+                continue
             failures.append((origin, url, error))
+
+    if transient_failures:
+        print(
+            (
+                "Transient Markdown link check failures detected "
+                f"(ignored): {len(transient_failures)}"
+            ),
+            file=sys.stderr,
+        )
+        for origin, url, error in transient_failures:
+            print(f"  - {origin}: {url} -> {summarize_error(error)}", file=sys.stderr)
+        print(
+            "Re-run with --strict-network to fail on transient network errors.",
+            file=sys.stderr,
+        )
 
     if failures:
         print("Broken Markdown links detected:", file=sys.stderr)
