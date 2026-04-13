@@ -22,8 +22,10 @@ ALLOWED_URL_PATTERNS = [
     re.compile(r"^https://www\.trs\.cm\.is\.nagoya-u\.ac\.jp/"),
 ]
 # Network and certificate transport failures that are often transient and
-# outside repository control. We keep deterministic content failures (e.g. 404,
-# malformed URLs, persistent DNS unknown-host) as hard failures.
+# outside repository control. Error names are sourced from aiohttp client
+# exceptions and Python built-in timeout errors. We keep deterministic content
+# failures (e.g. 404, malformed URLs, persistent DNS unknown-host) as hard
+# failures.
 TRANSIENT_ERROR_CLASS_NAMES = {
     "ClientConnectorCertificateError",
     "ClientProxyConnectionError",
@@ -78,8 +80,8 @@ def is_transient_network_error(error: object) -> bool:
 
 
 def check_target(path: Path) -> Iterable[tuple[str, str, object]]:
-    # Imported lazily so unit tests can import this module without requiring
-    # linkcheckmd to be installed in the main environment.
+    # Imported locally to allow unit tests to mock this module without
+    # requiring linkcheckmd as a test dependency.
     import linkcheckmd
 
     result = linkcheckmd.check_links(

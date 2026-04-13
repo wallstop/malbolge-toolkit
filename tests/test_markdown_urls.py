@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import io
 import unittest
 from contextlib import redirect_stderr
@@ -8,16 +9,19 @@ from unittest.mock import patch
 
 from scripts import check_markdown_urls
 
-
-class ClientConnectionError(Exception):
-    pass
+try:
+    AiohttpClientConnectionError = importlib.import_module(
+        "aiohttp"
+    ).ClientConnectionError
+except Exception:  # pragma: no cover - fallback for environments without aiohttp
+    AiohttpClientConnectionError = type("ClientConnectionError", (Exception,), {})
 
 
 class MarkdownUrlCheckTests(unittest.TestCase):
     def test_is_transient_network_error_data_driven(self) -> None:
         cases = [
             (RuntimeError("No address associated with hostname"), False),
-            (ClientConnectionError("connection dropped"), True),
+            (AiohttpClientConnectionError("connection dropped"), True),
             (RuntimeError("certificate verify failed"), True),
             (RuntimeError("timed out while connecting"), True),
             (RuntimeError("Name or service not known"), False),
