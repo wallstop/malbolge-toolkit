@@ -9,10 +9,6 @@ from unittest.mock import patch
 from scripts import check_markdown_urls
 
 
-class ClientConnectorDNSError(Exception):
-    pass
-
-
 class ClientConnectionError(Exception):
     pass
 
@@ -20,7 +16,7 @@ class ClientConnectionError(Exception):
 class MarkdownUrlCheckTests(unittest.TestCase):
     def test_is_transient_network_error_data_driven(self) -> None:
         cases = [
-            (ClientConnectorDNSError("dns failure"), False),
+            (RuntimeError("No address associated with hostname"), False),
             (ClientConnectionError("connection dropped"), True),
             (RuntimeError("certificate verify failed"), True),
             (RuntimeError("timed out while connecting"), True),
@@ -87,7 +83,7 @@ class MarkdownUrlCheckTests(unittest.TestCase):
             (
                 "README.md",
                 "https://example.com",
-                ClientConnectorDNSError("No address associated with hostname"),
+                RuntimeError("No address associated with hostname"),
             ),
         ]
         stderr = io.StringIO()

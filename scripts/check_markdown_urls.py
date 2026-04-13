@@ -21,6 +21,9 @@ SKIP_SCHEMES = {"mailto", "tel", "irc", "ssh"}
 ALLOWED_URL_PATTERNS = [
     re.compile(r"^https://www\.trs\.cm\.is\.nagoya-u\.ac\.jp/"),
 ]
+# Network and certificate transport failures that are often transient and
+# outside repository control. We keep deterministic content failures (e.g. 404,
+# malformed URLs, persistent DNS unknown-host) as hard failures.
 TRANSIENT_ERROR_CLASS_NAMES = {
     "ClientConnectorCertificateError",
     "ClientProxyConnectionError",
@@ -65,6 +68,7 @@ def summarize_error(error: object) -> str:
 
 
 def is_transient_network_error(error: object) -> bool:
+    """Return True when link-check errors are likely transient transport failures."""
     if not isinstance(error, Exception):
         return False
     if type(error).__name__ in TRANSIENT_ERROR_CLASS_NAMES:
