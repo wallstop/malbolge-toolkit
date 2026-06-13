@@ -22,6 +22,12 @@ class InvalidProgramError(ValueError):
     """Raised when a program cannot be normalized."""
 
 
+def _validate_program_length(instruction_list: list[str], *, extra_offset: int = 0) -> None:
+    """Raise InvalidProgramError if the program exceeds Malbolge's maximum length."""
+    if len(instruction_list) + extra_offset > MAX_PROGRAM_LENGTH:
+        raise InvalidProgramError("Program exceeds Malbolge maximum length (59049).")
+
+
 def normalize(instruction_list: Iterable[str]) -> list[str]:
     """
     Convert ASCII characters to Malbolge opcodes.
@@ -30,16 +36,13 @@ def normalize(instruction_list: Iterable[str]) -> list[str]:
     to remain compatible with legacy behaviour.
     """
     instruction_list = list(instruction_list)
-    if len(instruction_list) > MAX_PROGRAM_LENGTH:
-        raise InvalidProgramError("Program exceeds Malbolge maximum length (59049).")
+    _validate_program_length(instruction_list)
 
-    return_string = ""
-    for index, char in enumerate(instruction_list):
-        translated = NORMAL_TRANSLATE[((ord(char) + index - 33) % 94)]
-        if translated in VALID_INSTRUCTIONS:
-            return_string += translated
-
-    return list(return_string)
+    return [
+        NORMAL_TRANSLATE[(ord(char) + index - 33) % 94]
+        for index, char in enumerate(instruction_list)
+        if NORMAL_TRANSLATE[(ord(char) + index - 33) % 94] in VALID_INSTRUCTIONS
+    ]
 
 
 @functools.cache
@@ -54,16 +57,13 @@ def reverse_normalize(
 ) -> list[str]:
     """Encode Malbolge opcodes back into printable ASCII characters."""
     instruction_list = list(instruction_list)
-    total_length = start_index + len(instruction_list)
-    if total_length > MAX_PROGRAM_LENGTH:
-        raise InvalidProgramError("Program exceeds Malbolge maximum length (59049).")
+    _validate_program_length(instruction_list, extra_offset=start_index)
 
-    return_string = ""
-    for offset, char in enumerate(instruction_list):
+    for char in instruction_list:
         if char not in VALID_INSTRUCTIONS:
             raise InvalidProgramError("Invalid opcode encountered during decoding.")
-        index = start_index + offset
-        translated = chr(_opcode_offset(char, index) + 33)
-        return_string += translated
 
-    return list(return_string)
+    return [
+        chr(_opcode_offset(char, start_index + offset) + 33)
+        for offset, char in enumerate(instruction_list)
+    ]

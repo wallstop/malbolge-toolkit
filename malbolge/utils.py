@@ -30,10 +30,7 @@ def convert_to_base3(value: int, digits: int = TERNARY_DIGITS) -> list[int]:
 
 def convert_to_base10(values: Sequence[int]) -> int:
     """Convert a sequence of ternary digits (LSB first) back to base 10."""
-    total = 0
-    for index, digit in enumerate(values):
-        total += digit * POWERS_OF_THREE[index]
-    return total
+    return sum(digit * POWERS_OF_THREE[index] for index, digit in enumerate(values))
 
 
 def ternary_rotate(value: int) -> int:
@@ -47,14 +44,10 @@ def crazy_operation(first: int, second: int) -> int:
     Execute the Malbolge 'crazy' operation on two values.
 
     The transformation is defined digit-wise using Malbolge's custom truth table.
+    Each ternary digit pair is looked up in the truth table and combined
+    with the corresponding power of three.
     """
-    total = 0
-    power = 1
-    local_first = first
-    local_second = second
-    for _ in range(TERNARY_DIGITS):
-        total += _CRAZY_TABLE[(local_first % 3) * 3 + (local_second % 3)] * power
-        local_first //= 3
-        local_second //= 3
-        power *= 3
-    return total
+    return sum(
+        _CRAZY_TABLE[((first // p) % 3) * 3 + ((second // p) % 3)] * p
+        for p in POWERS_OF_THREE
+    )
